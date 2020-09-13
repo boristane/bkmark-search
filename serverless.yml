@@ -1,0 +1,127 @@
+service: bkmark-search
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline-ssm
+  - serverless-plugin-optimize
+  - serverless-offline
+  - serverless-offline-aws-eventbridge
+  
+resources:
+  - ${file(./resources/databases.yml)}
+  - ${file(./resources/queues.yml)}
+  - ${file(./resources/event-buses.yml)}
+  - ${file(./resources/api-gateway.yml)}
+
+package:
+  individually: true
+
+custom:
+  authLambdaArn: 
+    prod: arn:aws:lambda:eu-west-2:893175024177:function:bkmark-users-prod-auth
+    offline: arn:aws:lambda:eu-west-2:893175024177:function:bkmark-users-prod-auth
+  logLevel:
+    offline: "debug"
+    dev: "debug"
+    prod: "info"
+  authorizer: 
+    arn: ${self:custom.authLambdaArn.${self:provider.stage}}
+    resultTtlInSeconds: 300
+    identitySource: method.request.header.Authorization
+    type: token
+  serverless-offline-ssm:
+    stages:
+      - offline
+    ssm:
+      '/boristane/bkmark/algolia/api-key': 'algolia-key'
+  serverless-offline-aws-eventbridge:
+    port: 4010
+    debug: true
+    account: 'offile-account'
+    convertEntry: false
+    stages:
+      - offline
+  dynamodb:
+    region: ${file(./${opt:stage}.yml):region}
+    stages:
+      - offline
+    start:
+      port: 8000
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    migration:
+      dir: offline/migrations
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 256
+  stage: ${opt:stage}
+  deploymentBucket:
+    name: lesley-lambda-deployments-${opt:stage}
+  region: ${file(./${opt:stage}.yml):region}
+  logRetentionInDays: 7
+  versionFunctions: false
+  tracing:
+    apiGateway: true
+    lambda: true
+  logs:
+    restApi:
+      accessLogging: false
+      executionLogging: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:BatchGetItem
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:BatchWriteItem
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+      Resource:
+        - Fn::GetAtt:
+          - ProjectionTable
+          - Arn 
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
+
+  environment:
+    ENV: ${opt:stage}
+    LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}}
+    PROJECTION_TABLE: 
+      Ref: ProjectionTable
+    ALGOLIA_APP_ID: ${file(./${opt:stage}.yml):algoliaAppId}
+    ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key~true}
+
+functions:
+  command:
+    handler: .build/main.command
+    reservedConcurrency: 10
+    memorySize: 512
+    description: ${opt:stage} - Hanlde commands
+    events:
+      - sqs:
+          arn: !GetAtt CommandsQueue.Arn
+  
+  search:
+    handler: .build/src/controllers/search.handler
+    description: ${opt:stage} - searches for a query
+    events:
+      - http:
+          path: /search
+          method: get
+          cors: true
+          authorizer: ${self:custom.authorizer}
+

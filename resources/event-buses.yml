@@ -1,0 +1,37 @@
+Resources:
+  UsersEventRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      EventBusName: ${file(./${opt:stage}.yml):usersBusName}
+      Description: "Forward events from the users service to the search SQS"
+      EventPattern: 
+        source: 
+          - "${file(./${opt:stage}.yml):usersBusName}-service"
+        detail-type:
+          - "USER_CREATED"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt CommandsQueue.Arn
+          Id: !GetAtt CommandsQueue.QueueName     
+          InputPath: "$.detail.data"
+
+  BookmarksEventRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      EventBusName: ${file(./${opt:stage}.yml):bookmarksBusName}
+      Description: "Forward events from the bookmarks service to the search SQS"
+      EventPattern: 
+        source: 
+          - "${file(./${opt:stage}.yml):bookmarksBusName}-service"
+        detail-type:
+          - "BOOKMARK_CREATED"
+          - "BOOKMARK_ARCHIVED"
+          - "BOOKMARK_UPDATED"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt CommandsQueue.Arn
+          Id: !GetAtt CommandsQueue.QueueName     
+          InputPath: "$.detail.data"
+              

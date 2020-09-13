@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "sourceMap": true,
+    "strict": true,
+    "lib": [
+      "es2015"
+    ],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "preserveConstEnums": true,
+    "strictNullChecks": true,
+    "outDir": ".build",
+    "moduleResolution": "node",
+    "rootDir": "./"
+  }
+}

@@ -1,0 +1,13 @@
+Resources:
+  # Projection Table
+  ProjectionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "${file(./${opt:stage}.yml):tableName}-projection"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: partitionKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: partitionKey
+          KeyType: HASH

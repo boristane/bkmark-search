@@ -1,0 +1,43 @@
+Resources:
+  CommandsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "${file(./${opt:stage}.yml):queueName}"
+      RedrivePolicy: 
+        deadLetterTargetArn: !GetAtt CommandsDeadLetterQueue.Arn
+        maxReceiveCount: 1
+  
+  CommandsDeadLetterQueue: 
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: "${file(./${opt:stage}.yml):queueName}-dead-letter"
+
+  CommandsQueuePolicy: 
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      Queues: 
+        - !Ref CommandsQueue
+      PolicyDocument: 
+        Statement: 
+          - 
+            Action: 
+              - "SQS:SendMessage" 
+              - "SQS:ReceiveMessage"
+            Effect: "Allow"
+            Resource: !GetAtt CommandsQueue.Arn
+            Condition: 
+              ArnEquals:
+                aws:SourceArn: !GetAtt UsersEventRule.Arn
+            Principal:  
+              Service: "events.amazonaws.com"
+          - 
+            Action: 
+              - "SQS:SendMessage" 
+              - "SQS:ReceiveMessage"
+            Effect: "Allow"
+            Resource: !GetAtt CommandsQueue.Arn
+            Condition: 
+              ArnEquals:
+                aws:SourceArn: !GetAtt BookmarksEventRule.Arn
+            Principal:  
+              Service: "events.amazonaws.com"
