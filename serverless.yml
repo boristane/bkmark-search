@@ -17,16 +17,23 @@ package:
   individually: true
 
 custom:
-  authLambdaArn: 
-    prod: arn:aws:lambda:eu-west-2:893175024177:function:bkmark-users-prod-auth
-    offline: arn:aws:lambda:eu-west-2:893175024177:function:bkmark-users-prod-auth
   logLevel:
     offline: "debug"
     dev: "debug"
     prod: "info"
+  customDomain:
+    domainName: "api.${file(./${opt:stage}.yml):domain}"
+    basePath: 'search'
+    apiType: rest
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    endpointType: 'edge'
+    securityPolicy: tls_1_2
   authorizer: 
-    arn: ${self:custom.authLambdaArn.${self:provider.stage}}
+    arn: 
+      !ImportValue Auth
     resultTtlInSeconds: 300
+    name: SearchAuth
     identitySource: method.request.header.Authorization
     type: token
   serverless-offline-ssm:
