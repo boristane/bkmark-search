@@ -4,6 +4,7 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline-ssm
   - serverless-plugin-optimize
+  - serverless-domain-manager
   - serverless-offline
   - serverless-offline-aws-eventbridge
   
