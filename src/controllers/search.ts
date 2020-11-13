@@ -15,11 +15,11 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     if (!userData || !userData.uuid) {
       return failure({ message: "Unauthorised operations" }, 401);
     }
-    const {query} = event.queryStringParameters ?? {} as ISearchBookmarksRequest;
-    
+    const { query } = event.queryStringParameters ?? {} as ISearchBookmarksRequest;
+
     const { uuid } = userData;
     const hits = await algolia.search(uuid, query);
-    logger.info("Got the results from algolia", hits);
+    logger.info("Got the results from algolia", { bookmarks: hits });
 
     const data = {
       message: "Got search results",

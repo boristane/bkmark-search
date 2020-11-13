@@ -16,8 +16,8 @@ async function createUserIndex(userId: string) {
         "notes",
         "metadata.title",
         "metadata.description",
-        "url",
         "tags",
+        "url",
       ]
     });
   } catch (error) {
@@ -37,7 +37,19 @@ async function createBookmark(bookmark: IBookmarkRequest): Promise<string> {
     });
     return objectID;
   } catch (error) {
-    logger.error("There was an error saving an object in algolia", { error, bookmark });
+    logger.error("There was an error creating an object in algolia", { error, bookmark });
+    throw error;
+  }
+}
+
+async function updateBookmark(bookmark: IBookmarkRequest, objectID: string): Promise<void> {
+  const client = initialiseAlgolia();
+  const index = client.initIndex(`user#${bookmark.userId}`);
+
+  try {
+    await index.saveObject({ ...bookmark, objectID });
+  } catch (error) {
+    logger.error("There was an error udating an object in algolia", { error, bookmark });
     throw error;
   }
 }
@@ -71,4 +83,5 @@ export default {
   search,
   createBookmark,
   deleteBookmark,
+  updateBookmark,
 }

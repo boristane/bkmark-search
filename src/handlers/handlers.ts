@@ -12,12 +12,16 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
       res = await initialiseIndex(data);
       break;
     case eventType.bookmarkCreated:
+    case eventType.bookmarkRestored:
       res = await createBookmarkObject(data);
       break;
     case eventType.bookmarkArchived:
+    case eventType.bookmarkDeleted:
       res = await deleteBookmarkObject(data);
       break;
     case eventType.bookmarkUpdated:
+    case eventType.bookmarkIncremented:
+    case eventType.bookmarkFavourited:
       res = await editBookmarkObject(data);
       break;
     default:
@@ -29,8 +33,13 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
 
 export enum eventType {
   userCreated = "USER_CREATED",
+
   bookmarkCreated = "BOOKMARK_CREATED",
   bookmarkArchived = "BOOKMARK_ARCHIVED",
   bookmarkUpdated = "BOOKMARK_UPDATED",
+  bookmarkDeleted = "BOOKMARK_DELETED",
+  bookmarkFavourited = "BOOKMARK_FAVOURITED",
+  bookmarkRestored = "BOOKMARK_RESTORED",
+  bookmarkIncremented = "BOOKMARK_INCREMENTED",
 }
 

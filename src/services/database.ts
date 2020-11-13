@@ -14,10 +14,9 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   const { tableName, dynamoDb } = initialise();
   const timestamp = moment().format();
   const dbCollection: IDatabaseItem = {
-    partitionKey: `bookmark#${bookmark.uuid}`,
+    partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
     objectId: objectId,
     created: timestamp,
-    updated: timestamp,
   };
   const params = {
     TableName: tableName,
@@ -34,12 +33,31 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   }
 }
 
-async function getBookmarkObjectId(uuid: number): Promise<string> {
+async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
+  const { tableName, dynamoDb } = initialise();
+
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
+    }
+  };
+
+  try {
+    await dynamoDb.delete(params).promise();
+  } catch (e) {
+    const message = "Failed to delete bookmark from dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
+async function getBookmarkObjectId(bookmark: IBookmarkRequest): Promise<string> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `bookmark#${uuid}`,
+      partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
     },
     ProjectionExpression: "#objectId",
     ExpressionAttributeNames: {
@@ -63,10 +81,10 @@ interface IDatabaseItem {
   partitionKey: string;
   objectId: string;
   created: string;
-  updated: string;
 }
 
 export default {
   getBookmarkObjectId,
   createBookmark,
+  deleteBookmark,
 }
