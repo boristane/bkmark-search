@@ -41,7 +41,7 @@ custom:
     stages:
       - offline
     ssm:
-      '/boristane/bkmark/algolia/api-key': 'algolia-key'
+      '/boristane/bkmark/algolia/api-key-offline': 'algolia-key'
   serverless-offline-aws-eventbridge:
     port: 4010
     debug: true
@@ -111,7 +111,7 @@ provider:
     PROJECTION_TABLE: 
       Ref: ProjectionTable
     ALGOLIA_APP_ID: ${file(./${opt:stage}.yml):algoliaAppId}
-    ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key~true}
+    ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key-${opt:stage}~true}
 
 functions:
   command:
