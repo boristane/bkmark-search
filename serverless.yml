@@ -69,7 +69,7 @@ provider:
   memorySize: 256
   stage: ${opt:stage}
   deploymentBucket:
-    name: lesley-lambda-deployments-${opt:stage}
+    name: boristane-lambdas-deployments-${opt:stage}
   region: ${file(./${opt:stage}.yml):region}
   logRetentionInDays: 7
   versionFunctions: false
@@ -111,7 +111,7 @@ provider:
     PROJECTION_TABLE: 
       Ref: ProjectionTable
     ALGOLIA_APP_ID: ${file(./${opt:stage}.yml):algoliaAppId}
-    ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key-${opt:stage}~true}
+    ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key~true}
 
 functions:
   command:

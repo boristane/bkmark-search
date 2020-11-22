@@ -5,17 +5,11 @@ import algolia from "../services/algolia";
 import { failure, handleError, IHTTPResponse, success } from "../utils/http-responses";
 import { wrapper } from "../utils/controllers-helpers";
 
-interface ISearchBookmarksRequest {
-  query: string;
-}
 
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
   try {
-    const userData = event.requestContext.authorizer;
-    if (!userData || !userData.uuid) {
-      return failure({ message: "Unauthorised operations" }, 401);
-    }
-    const { query } = event.queryStringParameters ?? {} as ISearchBookmarksRequest;
+    const userData = event.requestContext.authorizer!;
+    const { query } = event.queryStringParameters!;
 
     const { uuid } = userData;
     const hits = await algolia.search(uuid, query);

@@ -1,0 +1,7 @@
+tableName: bkmark-search
+usersBusName: bkmark-users
+bookmarksBusName: bkmark-bookmarks
+queueName: bkmark-search
+region: eu-west-2
+algoliaAppId: DDZQ8WKUYI
+domain: bkmark.xyz
