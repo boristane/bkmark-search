@@ -11,6 +11,12 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     const userData = event.requestContext.authorizer!;
     const { query } = event.queryStringParameters!;
 
+
+    const user = await database.getUser(userData.uuid);
+    if (!user.membership.isActive) {
+      return failure({ message: "Please activate your subscription" }, 403);
+    }
+
     const { uuid } = userData;
     const hits = await algolia.search(uuid, query);
     logger.info("Got the results from algolia", { bookmarks: hits });
