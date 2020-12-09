@@ -47,7 +47,7 @@ async function updateBookmark(bookmark: IBookmarkRequest, objectID: string): Pro
   const index = client.initIndex(`user#${bookmark.userId}`);
 
   try {
-    await index.saveObject({ ...bookmark, objectID });
+    await index.partialUpdateObject({ ...bookmark, objectID });
   } catch (error) {
     logger.error("There was an error udating an object in algolia", { error, bookmark });
     throw error;
