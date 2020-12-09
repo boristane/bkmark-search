@@ -2,11 +2,14 @@ import { IBookmarkRequest } from "../schemas/bookmark";
 import logger from "logger";
 import algolia from "../services/algolia";
 import database from "../services/database";
+import { getFullPage } from "../services/scrapper";
 
 export async function createBookmarkObject(data: { bookmark: IBookmarkRequest }): Promise<boolean> {
   try {
-    const objectId = await algolia.createBookmark(data.bookmark);
-    await database.createBookmark(objectId, data.bookmark);
+    const { bookmark } = data;
+    const fullPage = await getFullPage(bookmark.url);
+    const objectId = await algolia.createBookmark({ fullPage, ...bookmark });
+    await database.createBookmark(objectId, bookmark);
   } catch (error) {
     logger.error("There was an error creating a bookmark for search", { data, error });
     return false;

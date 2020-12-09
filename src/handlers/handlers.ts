@@ -31,7 +31,7 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
       logger.error("Unexpected event type found in message. Sending to dead letter queue.", { message });
       res = false;
   }
-  return res
+  return res;
 }
 
 export enum eventType {
