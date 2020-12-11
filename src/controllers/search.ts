@@ -19,7 +19,7 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
 
     const { uuid } = userData;
     const hits = await algolia.search(uuid, query);
-    logger.info("Got the results from algolia", { bookmarks: hits });
+    logger.info("Got the results from algolia.", { bookmarks: hits });
 
     const data = {
       message: "Got search results",

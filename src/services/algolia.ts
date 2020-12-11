@@ -16,8 +16,8 @@ async function createUserIndex(userId: string) {
         "notes",
         "metadata.title",
         "metadata.description",
-        "tags",
-        "url",
+        "tags.name",
+        "fullPage.body",
       ]
     });
   } catch (error) {
