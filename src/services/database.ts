@@ -14,16 +14,17 @@ function initialise(): { tableName: string, dynamoDb: DynamoDB.DocumentClient } 
 async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Promise<void> {
   const { tableName, dynamoDb } = initialise();
   const timestamp = moment().format();
-  const dbCollection: IDatabaseItem = {
+  const dbBookmark: IDatabaseItem = {
     partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
     data: {
       objectId,
     },
     created: timestamp,
+    type: "bookmark",
   };
   const params = {
     TableName: tableName,
-    Item: dbCollection,
+    Item: dbBookmark,
     ConditionExpression: 'attribute_not_exists(partitionKey)'
   };
 
@@ -90,6 +91,7 @@ async function createUser(user: IUser): Promise<void> {
     data: user,
     created: user.created,
     updated: user.updated,
+    type: "user",
   };
   const params = {
     TableName: tableName,
@@ -165,6 +167,7 @@ interface IDatabaseItem {
   data: Record<string, any>;
   created: string;
   updated?: string;
+  type: string;
 }
 
 export default {
