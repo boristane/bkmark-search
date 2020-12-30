@@ -70,7 +70,7 @@ async function search(userId: string, query: string) {
   const client = initialiseAlgolia();
   try {
     const index = client.initIndex(`user#${userId}`);
-    const hits = (await index.search(query)).hits.map(h => omit(["_highlightResult"], h));
+    const hits = (await index.search(query)).hits.map(h => omit(["_highlightResult", "fullPage"], h));
     return hits;
   } catch (error) {
     logger.error("There was an error running a search request on Algolia", { error, userId, query });
