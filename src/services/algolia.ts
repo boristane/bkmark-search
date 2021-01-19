@@ -13,6 +13,7 @@ async function createUserIndex(userId: string) {
     await index.setSettings({
       customRanking: ["desc(created)"],
       searchableAttributes: [
+        "title",
         "notes",
         "metadata.title",
         "metadata.description",
@@ -30,6 +31,8 @@ async function createUserIndex(userId: string) {
 async function createBookmark(bookmark: IBookmarkRequest): Promise<string> {
   const client = initialiseAlgolia();
   const index = client.initIndex(`user#${bookmark.userId}`);
+  const maxLength = 13000;
+  bookmark.fullPage.body = bookmark.fullPage.body.slice(0, maxLength);
 
   try {
     const { objectID } = await index.saveObject(bookmark, {
