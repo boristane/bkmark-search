@@ -8,7 +8,6 @@ export interface ICreateIndexRequest {
 export interface IChangeUserMembershipRequest {
   user: {
     uuid: string;
-    sequence: number;
   };
   membership: { tier: number; isActive: boolean }
 }

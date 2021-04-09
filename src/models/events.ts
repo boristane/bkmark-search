@@ -1,6 +1,6 @@
 export interface IEventMessage {
   uuid: string | number;
-  sequence: number;
+  sequence: number | undefined;
   data: any;
   version: number;
   source: string;

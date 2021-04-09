@@ -108,21 +108,19 @@ async function createUser(user: IUser): Promise<void> {
   }
 }
 
-async function changeUserMembership(uuid: string, sequence: number, membership: { tier: number; isActive: boolean }): Promise<IUser> {
+async function changeUserMembership(uuid: string, membership: { tier: number; isActive: boolean }): Promise<IUser> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
       partitionKey: `user#${uuid}`,
     },
-    UpdateExpression: `set #data.#membership = :membership, #data.#sequence = :s, #data.updated = :updated, updated = :updated`,
+    UpdateExpression: `set #data.#membership = :membership, #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
       "#data": "data",
-      "#sequence": "sequence",
       "#membership": "membership",
     },
     ExpressionAttributeValues: {
-      ":s": sequence,
       ":updated": moment().format(),
       ":membership": membership,
     },

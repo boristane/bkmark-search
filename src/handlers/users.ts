@@ -9,7 +9,6 @@ export async function initialiseIndex(data: ICreateIndexRequest ): Promise<boole
     await algolia.createUserIndex(data.user.uuid);
     const user: IUser = {
       uuid: data.user.uuid,
-      sequence: 0,
       membership: data.membership,
     };
     await database.createUser(user);
@@ -23,7 +22,7 @@ export async function initialiseIndex(data: ICreateIndexRequest ): Promise<boole
 export async function changeUserMembership(data: IChangeUserMembershipRequest ): Promise<boolean> {
   try {
     const { user, membership } = data;
-    await database.changeUserMembership(user.uuid, user.sequence, membership);
+    await database.changeUserMembership(user.uuid, membership);
     return true;
   } catch (err) {
     const message = "Unexpected error when changing the membership of a user";
