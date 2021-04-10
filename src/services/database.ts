@@ -6,7 +6,7 @@ import moment from "dayjs";
 import Exception from "../utils/error";
 import { IUser } from "../models/user";
 
-function initialise(): { tableName: string, dynamoDb: DynamoDB.DocumentClient } {
+function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } {
   const tableName = process.env.PROJECTION_TABLE || "";
   return initialiseDb(tableName);
 }
@@ -25,7 +25,7 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   const params = {
     TableName: tableName,
     Item: dbBookmark,
-    ConditionExpression: 'attribute_not_exists(partitionKey)'
+    ConditionExpression: "attribute_not_exists(partitionKey)",
   };
 
   try {
@@ -44,7 +44,7 @@ async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
     TableName: tableName,
     Key: {
       partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
-    }
+    },
   };
 
   try {
@@ -96,7 +96,7 @@ async function createUser(user: IUser): Promise<void> {
   const params = {
     TableName: tableName,
     Item: dbUser,
-    ConditionExpression: 'attribute_not_exists(partitionKey)'
+    ConditionExpression: "attribute_not_exists(partitionKey)",
   };
 
   try {
@@ -125,7 +125,7 @@ async function changeUserMembership(uuid: string, membership: { tier: number; is
       ":membership": membership,
     },
     ReturnValues: "ALL_NEW",
-  }
+  };
   try {
     return (await dynamoDb.update(params).promise()).Attributes?.data;
   } catch (e) {
@@ -160,6 +160,25 @@ async function getUser(userId: string): Promise<IUser> {
   }
 }
 
+async function deleteUser(userId: string): Promise<void> {
+  const { tableName, dynamoDb } = initialise();
+
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${userId}`,
+    },
+  };
+
+  try {
+    await dynamoDb.delete(params).promise();
+  } catch (e) {
+    const message = "Failed to delete user from dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
 interface IDatabaseItem {
   partitionKey: string;
   data: Record<string, any>;
@@ -175,4 +194,5 @@ export default {
   createUser,
   changeUserMembership,
   getUser,
-}
+  deleteUser,
+};

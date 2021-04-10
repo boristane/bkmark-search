@@ -9,6 +9,7 @@ Resources:
           - "${file(./${opt:stage}.yml):usersBusName}-service"
         detail-type:
           - "USER_CREATED"
+          - "USER_DELETED"
           - "USER_MEMBERSHIP_CHANGED"
       State: "ENABLED"
       Targets: 

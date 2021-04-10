@@ -1,14 +1,19 @@
 export interface ICreateIndexRequest {
-  user: { 
+  user: {
     uuid: string;
-  },
-  membership: { tier: number; isActive: boolean }
+  };
+  membership: { tier: number; isActive: boolean };
 }
 
 export interface IChangeUserMembershipRequest {
   user: {
     uuid: string;
   };
-  membership: { tier: number; isActive: boolean }
+  membership: { tier: number; isActive: boolean };
 }
 
+export interface IDeleteIndexRequest {
+  user: {
+    uuid: string;
+  };
+}

@@ -1,10 +1,10 @@
-import { ICreateIndexRequest, IChangeUserMembershipRequest } from "../schemas/user";
+import { ICreateIndexRequest, IChangeUserMembershipRequest, IDeleteIndexRequest } from "../schemas/user";
 import algolia from "../services/algolia";
 import logger from "logger";
 import { IUser } from "../models/user";
 import database from "../services/database";
 
-export async function initialiseIndex(data: ICreateIndexRequest ): Promise<boolean> {
+export async function initialiseIndex(data: ICreateIndexRequest): Promise<boolean> {
   try {
     await algolia.createUserIndex(data.user.uuid);
     const user: IUser = {
@@ -19,14 +19,25 @@ export async function initialiseIndex(data: ICreateIndexRequest ): Promise<boole
   }
 }
 
-export async function changeUserMembership(data: IChangeUserMembershipRequest ): Promise<boolean> {
+export async function changeUserMembership(data: IChangeUserMembershipRequest): Promise<boolean> {
   try {
     const { user, membership } = data;
     await database.changeUserMembership(user.uuid, membership);
     return true;
   } catch (err) {
     const message = "Unexpected error when changing the membership of a user";
-    logger.error(message, { data, error: err, });
+    logger.error(message, { data, error: err });
+    return false;
+  }
+}
+
+export async function deleteIndex(data: IDeleteIndexRequest): Promise<boolean> {
+  try {
+    await algolia.deleteUserIndex(data.user.uuid);
+    await database.deleteUser(data.user.uuid);
+    return true;
+  } catch (error) {
+    logger.error("There was an error deleting a user and index", { error, data });
     return false;
   }
 }

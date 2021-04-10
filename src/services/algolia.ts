@@ -27,6 +27,18 @@ async function createUserIndex(userId: string) {
   }
 }
 
+async function deleteUserIndex(userId: string) {
+  const client = initialiseAlgolia();
+
+  const index = client.initIndex(`user#${userId}`);
+  try {
+    await index.delete();
+  } catch (error) {
+    logger.error("There was an error deleting a user Algolia index", { error, userId });
+    throw error;
+  }
+}
+
 
 async function createBookmark(bookmark: IBookmarkRequest): Promise<string> {
   const client = initialiseAlgolia();
@@ -83,6 +95,7 @@ async function search(userId: string, query: string) {
 
 export default {
   createUserIndex,
+  deleteUserIndex,
   search,
   createBookmark,
   deleteBookmark,
