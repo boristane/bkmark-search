@@ -20,7 +20,7 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
 
     const user = await database.getUser(userData.uuid);
     if (!user.membership.isActive) {
-      return failure({ message: "Please activate your subscription" }, 403);
+      return failure({ message: "Please activate your subscription" }, 402);
     }
 
     const { uuid } = userData;
