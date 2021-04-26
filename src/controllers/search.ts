@@ -2,12 +2,7 @@ import database from "../services/database";
 import logger from "logger";
 import { Context, APIGatewayEvent } from "aws-lambda";
 import algolia from "../services/algolia";
-import {
-  failure,
-  handleError,
-  IHTTPResponse,
-  success,
-} from "../utils/http-responses";
+import { failure, handleError, IHTTPResponse, success } from "../utils/http-responses";
 import { wrapper } from "../utils/controllers-helpers";
 
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
@@ -23,14 +18,21 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     if (!user.membership.isActive) {
       return failure({ message: "Please activate your subscription" }, 402);
     }
-    if (organisationId && !user.organisations?.some(org => org === organisationId)) {
+    if (organisationId && !user.organisations?.some((org) => org === organisationId)) {
       return failure({ message: "Forbidden" }, 403);
     }
 
     const { uuid } = userData;
     let hits = await algolia.search(organisationId || uuid, query, !!organisationId);
-    hits = hits.filter(hit => user.collections?.includes(hit.collection.uuid));
     
+    if (organisationId) {
+      hits = hits.filter((hit) =>
+        user.collections?.some(
+          (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
+        )
+      );
+    }
+
     const data = {
       message: "Got search results",
       data: {

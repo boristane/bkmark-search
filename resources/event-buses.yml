@@ -37,6 +37,7 @@ Resources:
           - "BOOKMARK_INCREMENTED"
           - "USER_INTERNAL_ORGANISATION_JOINED"
           - "USER_INTERNAL_COLLECTION_JOINED"
+          - "COLLECTION_CREATED"
       State: "ENABLED"
       Targets: 
         - 

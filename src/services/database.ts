@@ -218,14 +218,19 @@ async function appendOrganisationToUser(userId: string, organisationId: string):
   }
 }
 
-async function appendCollectionToUser(userId: string, collectionId: string): Promise<IUser> {
+async function appendCollectionToUser(
+  userId: string,
+  ownerId: string,
+  collectionId: string,
+  isOrganisation: boolean
+): Promise<IUser> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
       partitionKey: `user#${userId}`,
     },
-    UpdateExpression: `set #data.#collections = list_append(if_not_exists(#data.#collections, :emptyArray), :collectionId), #data.updated = :updated, updated = :updated`,
+    UpdateExpression: `set #data.#collections = list_append(if_not_exists(#data.#collections, :emptyArray), :collection), #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
       "#data": "data",
       "#collections": "collections",
@@ -233,7 +238,7 @@ async function appendCollectionToUser(userId: string, collectionId: string): Pro
     ExpressionAttributeValues: {
       ":updated": moment().format(),
       ":emptyArray": [],
-      ":collectionId": [collectionId],
+      ":collection": [{ uuid: collectionId, ownerId, isOrganisation }],
     },
     ReturnValues: "ALL_NEW",
   };

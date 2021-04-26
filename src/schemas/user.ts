@@ -24,6 +24,6 @@ export interface IAddUserToOrganisationRequest {
 }
 
 export interface IAddUserToCollectionRequest {
-  user: { uuid: string };
-  collection: { uuid: string };
+  user?: { uuid: string };
+  collection: { uuid: string; organisationId?: string, userId: string; };
 }

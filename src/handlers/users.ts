@@ -56,7 +56,9 @@ export async function addUserToOrganisation(data: IAddUserToOrganisationRequest)
 
 export async function addUserToCollection(data: IAddUserToCollectionRequest) {
   try {
-    await database.appendCollectionToUser(data.user.uuid, data.collection.uuid);
+    const ownerId = data.collection.organisationId || data.collection.userId;
+    const userToAddId = data.user?.uuid || data.collection.userId;
+    await database.appendCollectionToUser(userToAddId, ownerId, data.collection.uuid, !!data.collection.organisationId);
     return true;
   } catch (error) {
     logger.error("There was an error adding a user to a collection", { error, data });

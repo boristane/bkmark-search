@@ -24,6 +24,7 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
     case eventType.userInternalOrganisationJoined:
       res = await addUserToOrganisation(data);
       break;
+    case eventType.collectionCreated:
     case eventType.userInternalCollectionJoined:
       res = await addUserToCollection(data);
       break;
@@ -70,4 +71,6 @@ export enum eventType {
 
   userInternalOrganisationJoined = "USER_INTERNAL_ORGANISATION_JOINED",
   userInternalCollectionJoined = "USER_INTERNAL_COLLECTION_JOINED",
+
+  collectionCreated = "COLLECTION_CREATED",
 }
