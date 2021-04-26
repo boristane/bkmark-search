@@ -1,7 +1,5 @@
-export interface IUser {
+export interface IOrganisation {
   uuid: string;
-  organisations?: string[];
-  collections?: string[];
   membership: { tier: number; isActive: boolean }
   created?: string;
   updated?: string;

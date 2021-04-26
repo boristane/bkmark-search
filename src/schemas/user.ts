@@ -12,8 +12,18 @@ export interface IChangeUserMembershipRequest {
   membership: { tier: number; isActive: boolean };
 }
 
-export interface IDeleteIndexRequest {
+export interface IDeleteUserIndexRequest {
   user: {
     uuid: string;
   };
+}
+
+export interface IAddUserToOrganisationRequest {
+  user: { uuid: string };
+  organisation: { uuid: string };
+}
+
+export interface IAddUserToCollectionRequest {
+  user: { uuid: string };
+  collection: { uuid: string };
 }

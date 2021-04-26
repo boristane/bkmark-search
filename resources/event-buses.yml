@@ -11,6 +11,7 @@ Resources:
           - "USER_CREATED"
           - "USER_DELETED"
           - "USER_MEMBERSHIP_CHANGED"
+          - "ORGANISATION_CREATED"
       State: "ENABLED"
       Targets: 
         - 
@@ -34,6 +35,8 @@ Resources:
           - "BOOKMARK_FAVOURITED"
           - "BOOKMARK_RESTORED"
           - "BOOKMARK_INCREMENTED"
+          - "USER_INTERNAL_ORGANISATION_JOINED"
+          - "USER_INTERNAL_COLLECTION_JOINED"
       State: "ENABLED"
       Targets: 
         - 

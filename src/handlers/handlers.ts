@@ -1,7 +1,14 @@
 import logger from "logger";
 import { IEventMessage } from "../models/events";
 import { createBookmarkObject, deleteBookmarkObject, editBookmarkObject } from "./bookmarks";
-import { changeUserMembership, initialiseIndex, deleteIndex } from "./users";
+import {
+  changeUserMembership,
+  initialiseUserIndex,
+  deleteUserIndex,
+  addUserToOrganisation,
+  addUserToCollection,
+} from "./users";
+import { initialiseOrganisationIndex } from "./organisations";
 
 export async function handleMessage(message: IEventMessage): Promise<boolean> {
   const data = message.data;
@@ -9,10 +16,19 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
   let res: boolean = false;
   switch (message.type) {
     case eventType.userCreated:
-      res = await initialiseIndex(data);
+      res = await initialiseUserIndex(data);
+      break;
+    case eventType.organisationCreated:
+      res = await initialiseOrganisationIndex(data);
+      break;
+    case eventType.userInternalOrganisationJoined:
+      res = await addUserToOrganisation(data);
+      break;
+    case eventType.userInternalCollectionJoined:
+      res = await addUserToCollection(data);
       break;
     case eventType.userDeleted:
-      res = await deleteIndex(data);
+      res = await deleteUserIndex(data);
       break;
     case eventType.userMembeshipChanged:
       res = await changeUserMembership(data);
@@ -49,4 +65,9 @@ export enum eventType {
   bookmarkFavourited = "BOOKMARK_FAVOURITED",
   bookmarkRestored = "BOOKMARK_RESTORED",
   bookmarkIncremented = "BOOKMARK_INCREMENTED",
+
+  organisationCreated = "ORGANISATION_CREATED",
+
+  userInternalOrganisationJoined = "USER_INTERNAL_ORGANISATION_JOINED",
+  userInternalCollectionJoined = "USER_INTERNAL_COLLECTION_JOINED",
 }

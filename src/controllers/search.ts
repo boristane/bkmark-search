@@ -13,20 +13,24 @@ import { wrapper } from "../utils/controllers-helpers";
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
   try {
     const userData = event.requestContext.authorizer!;
-    const { query } = event.queryStringParameters!;
+    const { query, organisationId } = event.queryStringParameters!;
     if (!query) {
       return failure({ message: "Bad Request" }, 400);
     }
 
-    const user = await database.getUser(userData.uuid);
+    const user = await database.getOwner(userData.uuid, false);
+
     if (!user.membership.isActive) {
       return failure({ message: "Please activate your subscription" }, 402);
     }
+    if (organisationId && !user.organisations?.some(org => org === organisationId)) {
+      return failure({ message: "Forbidden" }, 403);
+    }
 
     const { uuid } = userData;
-    const hits = await algolia.search(uuid, query);
-    logger.info("Got the results from algolia.", { bookmarks: hits });
-
+    let hits = await algolia.search(organisationId || uuid, query, !!organisationId);
+    hits = hits.filter(hit => user.collections?.includes(hit.collection.uuid));
+    
     const data = {
       message: "Got search results",
       data: {

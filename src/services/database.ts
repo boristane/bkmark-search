@@ -5,6 +5,7 @@ import { IBookmarkRequest } from "../schemas/bookmark";
 import moment from "dayjs";
 import Exception from "../utils/error";
 import { IUser } from "../models/user";
+import { IOrganisation } from "../models/organisation";
 
 function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } {
   const tableName = process.env.PROJECTION_TABLE || "";
@@ -14,8 +15,10 @@ function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } 
 async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Promise<void> {
   const { tableName, dynamoDb } = initialise();
   const timestamp = moment().format();
+  const ownerId = bookmark.organisationId || bookmark.userId;
+
   const dbBookmark: IDatabaseItem = {
-    partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
+    partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
     data: {
       objectId,
     },
@@ -40,10 +43,12 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
 async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
+  const ownerId = bookmark.organisationId || bookmark.userId;
+
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
     },
   };
 
@@ -58,10 +63,12 @@ async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
 
 async function getBookmarkObjectId(bookmark: IBookmarkRequest): Promise<string> {
   const { tableName, dynamoDb } = initialise();
+
+  const ownerId = bookmark.organisationId || bookmark.userId;
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `user#${bookmark.userId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
     },
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {
@@ -81,17 +88,17 @@ async function getBookmarkObjectId(bookmark: IBookmarkRequest): Promise<string> 
   }
 }
 
-async function createUser(user: IUser): Promise<void> {
+async function createOwner(owner: IUser | IOrganisation, isOrganisation: boolean): Promise<void> {
   const { tableName, dynamoDb } = initialise();
-  user.created = moment().format();
-  user.updated = moment().format();
+  owner.created = moment().format();
+  owner.updated = moment().format();
 
   const dbUser: IDatabaseItem = {
-    partitionKey: `user#${user.uuid}`,
-    data: user,
-    created: user.created,
-    updated: user.updated,
-    type: "user",
+    partitionKey: `${isOrganisation ? "organisation" : "user"}#${owner.uuid}`,
+    data: owner,
+    created: owner.created,
+    updated: owner.updated,
+    type: `${isOrganisation ? "organisation" : "user"}`,
   };
   const params = {
     TableName: tableName,
@@ -102,18 +109,22 @@ async function createUser(user: IUser): Promise<void> {
   try {
     await dynamoDb.put(params).promise();
   } catch (e) {
-    const message = "Failed to save user in dynamo db";
+    const message = "Failed to save owner in dynamo db";
     logger.error(message, { params, error: e });
     throw e;
   }
 }
 
-async function changeUserMembership(uuid: string, membership: { tier: number; isActive: boolean }): Promise<IUser> {
+async function changeOwnerMembership(
+  uuid: string,
+  membership: { tier: number; isActive: boolean },
+  isOrganisation: boolean
+): Promise<IUser | IOrganisation> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `user#${uuid}`,
+      partitionKey: `${isOrganisation ? "organisation" : "user"}#${uuid}`,
     },
     UpdateExpression: `set #data.#membership = :membership, #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
@@ -129,18 +140,18 @@ async function changeUserMembership(uuid: string, membership: { tier: number; is
   try {
     return (await dynamoDb.update(params).promise()).Attributes?.data;
   } catch (e) {
-    const message = "Failed to change the membership of a user in dynamo db";
+    const message = "Failed to change the membership of a owner in dynamo db";
     logger.error(message, { params, error: e });
     throw e;
   }
 }
 
-async function getUser(userId: string): Promise<IUser> {
+async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `user#${userId}`,
+      partitionKey: `${isOrganisation ? "organisation" : "user"}#${ownerId}`,
     },
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {
@@ -160,13 +171,13 @@ async function getUser(userId: string): Promise<IUser> {
   }
 }
 
-async function deleteUser(userId: string): Promise<void> {
+async function deleteOwner(userId: string, isOrganisation: boolean): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `user#${userId}`,
+      partitionKey: `${isOrganisation ? "organisation" : "user"}#${userId}`,
     },
   };
 
@@ -174,6 +185,62 @@ async function deleteUser(userId: string): Promise<void> {
     await dynamoDb.delete(params).promise();
   } catch (e) {
     const message = "Failed to delete user from dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
+async function appendOrganisationToUser(userId: string, organisationId: string): Promise<IUser> {
+  const { tableName, dynamoDb } = initialise();
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${userId}`,
+    },
+    UpdateExpression: `set #data.#organisations = list_append(if_not_exists(#data.#organisations, :emptyArray), :organisationId), #data.updated = :updated, updated = :updated`,
+    ExpressionAttributeNames: {
+      "#data": "data",
+      "#organisations": "organisations",
+    },
+    ExpressionAttributeValues: {
+      ":updated": moment().format(),
+      ":emptyArray": [],
+      ":organisationId": [organisationId],
+    },
+    ReturnValues: "ALL_NEW",
+  };
+  try {
+    return (await dynamoDb.update(params).promise()).Attributes?.data;
+  } catch (e) {
+    const message = "Failed to append an organisations to a user in dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
+async function appendCollectionToUser(userId: string, collectionId: string): Promise<IUser> {
+  const { tableName, dynamoDb } = initialise();
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${userId}`,
+    },
+    UpdateExpression: `set #data.#collections = list_append(if_not_exists(#data.#collections, :emptyArray), :collectionId), #data.updated = :updated, updated = :updated`,
+    ExpressionAttributeNames: {
+      "#data": "data",
+      "#collections": "collections",
+    },
+    ExpressionAttributeValues: {
+      ":updated": moment().format(),
+      ":emptyArray": [],
+      ":collectionId": [collectionId],
+    },
+    ReturnValues: "ALL_NEW",
+  };
+  try {
+    return (await dynamoDb.update(params).promise()).Attributes?.data;
+  } catch (e) {
+    const message = "Failed to append a collection to a user in dynamo db";
     logger.error(message, { params, error: e });
     throw e;
   }
@@ -191,8 +258,10 @@ export default {
   getBookmarkObjectId,
   createBookmark,
   deleteBookmark,
-  createUser,
-  changeUserMembership,
-  getUser,
-  deleteUser,
+  createOwner,
+  changeOwnerMembership,
+  getOwner,
+  deleteOwner,
+  appendOrganisationToUser,
+  appendCollectionToUser,
 };
