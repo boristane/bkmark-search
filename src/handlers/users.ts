@@ -1,4 +1,4 @@
-import { ICreateIndexRequest, IChangeUserMembershipRequest, IDeleteUserIndexRequest, IAddUserToOrganisationRequest, IAddUserToCollectionRequest } from "../schemas/user";
+import { ICreateIndexRequest, IChangeUserMembershipRequest, IDeleteUserIndexRequest, IAddUserToOrganisationRequest, IAddUserToCollectionRequest, IRemoveCollectionFromUsersRequest } from "../schemas/user";
 import algolia from "../services/algolia";
 import logger from "logger";
 import { IUser } from "../models/user";
@@ -59,6 +59,26 @@ export async function addUserToCollection(data: IAddUserToCollectionRequest) {
     const ownerId = data.collection.organisationId || data.collection.userId;
     const userToAddId = data.user?.uuid || data.collection.userId;
     await database.appendCollectionToUser(userToAddId, ownerId, data.collection.uuid, !!data.collection.organisationId);
+    return true;
+  } catch (error) {
+    logger.error("There was an error adding a user to a collection", { error, data });
+    return false;
+  }
+}
+
+export async function removeCollectionFromUsers(data: IRemoveCollectionFromUsersRequest) {
+  try {
+    const userIds = await data.collection.users;
+    const promises = userIds.map(async id => {
+      const user = await database.getOwner(id, false);
+      const index = user.collections?.findIndex(collection => collection.uuid === data.collection.uuid && collection.ownerId === (data.collection.organisationId || data.collection.userId));
+      if(!index) {
+        return;
+      }
+      await database.removeCollectionFromUser(user.uuid, index);
+    });
+
+    await Promise.all(promises);
     return true;
   } catch (error) {
     logger.error("There was an error adding a user to a collection", { error, data });

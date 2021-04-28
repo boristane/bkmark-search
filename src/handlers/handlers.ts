@@ -7,8 +7,9 @@ import {
   deleteUserIndex,
   addUserToOrganisation,
   addUserToCollection,
+  removeCollectionFromUsers,
 } from "./users";
-import { initialiseOrganisationIndex } from "./organisations";
+import { changeOrganisationMembership, initialiseOrganisationIndex } from "./organisations";
 
 export async function handleMessage(message: IEventMessage): Promise<boolean> {
   const data = message.data;
@@ -28,11 +29,17 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
     case eventType.userInternalCollectionJoined:
       res = await addUserToCollection(data);
       break;
+    case eventType.collectionDeleted:
+      res = await removeCollectionFromUsers(data);
+      break;
     case eventType.userDeleted:
       res = await deleteUserIndex(data);
       break;
     case eventType.userMembeshipChanged:
       res = await changeUserMembership(data);
+      break;
+    case eventType.organisationMembershipChanged:
+      res = await changeOrganisationMembership(data);
       break;
     case eventType.bookmarkCreated:
     case eventType.bookmarkRestored:
@@ -68,9 +75,11 @@ export enum eventType {
   bookmarkIncremented = "BOOKMARK_INCREMENTED",
 
   organisationCreated = "ORGANISATION_CREATED",
+  organisationMembershipChanged = "ORGANISATION_MEMBERSHIP_CHANGED",
 
   userInternalOrganisationJoined = "USER_INTERNAL_ORGANISATION_JOINED",
   userInternalCollectionJoined = "USER_INTERNAL_COLLECTION_JOINED",
 
   collectionCreated = "COLLECTION_CREATED",
+  collectionDeleted = "COLLECTION_DELETED",
 }

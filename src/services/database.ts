@@ -251,6 +251,35 @@ async function appendCollectionToUser(
   }
 }
 
+async function removeCollectionFromUser(
+  userId: string,
+  index: number,
+): Promise<IUser> {
+  const { tableName, dynamoDb } = initialise();
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${userId}`,
+    },
+    UpdateExpression: `remove #data.#collections[${index}] set #data.updated = :updated, updated = :updated`,
+    ExpressionAttributeNames: {
+      "#data": "data",
+      "#collections": "collections",
+    },
+    ExpressionAttributeValues: {
+      ":updated": moment().format(),
+    },
+    ReturnValues: "ALL_NEW",
+  };
+  try {
+    return (await dynamoDb.update(params).promise()).Attributes?.data;
+  } catch (e) {
+    const message = "Failed to remove a collection to a user in dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
 interface IDatabaseItem {
   partitionKey: string;
   data: Record<string, any>;
@@ -269,4 +298,5 @@ export default {
   deleteOwner,
   appendOrganisationToUser,
   appendCollectionToUser,
+  removeCollectionFromUser,
 };

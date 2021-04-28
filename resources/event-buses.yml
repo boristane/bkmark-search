@@ -12,6 +12,7 @@ Resources:
           - "USER_DELETED"
           - "USER_MEMBERSHIP_CHANGED"
           - "ORGANISATION_CREATED"
+          - "ORGANISATION_MEMBERSHIP_CHANGED"
       State: "ENABLED"
       Targets: 
         - 
@@ -38,6 +39,7 @@ Resources:
           - "USER_INTERNAL_ORGANISATION_JOINED"
           - "USER_INTERNAL_COLLECTION_JOINED"
           - "COLLECTION_CREATED"
+          - "COLLECTION_DELETED"
       State: "ENABLED"
       Targets: 
         - 
