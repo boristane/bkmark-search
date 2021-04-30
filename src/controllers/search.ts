@@ -4,6 +4,7 @@ import { Context, APIGatewayEvent } from "aws-lambda";
 import algolia from "../services/algolia";
 import { failure, handleError, IHTTPResponse, success } from "../utils/http-responses";
 import { wrapper } from "../utils/controllers-helpers";
+import { IBookmark } from "../models/bookmark";
 
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
   try {
@@ -23,10 +24,15 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     }
 
     const { uuid } = userData;
-    let hits = await algolia.search(organisationId || uuid, query, !!organisationId);
-    
-    if (organisationId) {
-      hits = hits.filter((hit) =>
+
+    let hits: IBookmark[];
+    if (!organisationId) {
+      const promises = user.organisations!.map(async organisation => {
+        return await algolia.search(organisation, query, !!organisation);
+      }).flat();
+      hits = (await Promise.all(promises)).flat();
+    } else {
+      hits = (await algolia.search(organisationId, query, !!organisationId)).filter((hit) =>
         user.collections?.some(
           (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
         )

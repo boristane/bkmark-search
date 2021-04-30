@@ -7,7 +7,7 @@
     "sourceMap": true,
     "strict": true,
     "lib": [
-      "es2015"
+      "es2019"
     ],
     "resolveJsonModule": true,
     "esModuleInterop": true,
