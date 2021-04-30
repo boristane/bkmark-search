@@ -51,7 +51,6 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
       break;
     case eventType.bookmarkUpdated:
     case eventType.bookmarkIncremented:
-    case eventType.bookmarkFavourited:
       res = await editBookmarkObject(data);
       break;
     default:
@@ -70,7 +69,6 @@ export enum eventType {
   bookmarkArchived = "BOOKMARK_ARCHIVED",
   bookmarkUpdated = "BOOKMARK_UPDATED",
   bookmarkDeleted = "BOOKMARK_DELETED",
-  bookmarkFavourited = "BOOKMARK_FAVOURITED",
   bookmarkRestored = "BOOKMARK_RESTORED",
   bookmarkIncremented = "BOOKMARK_INCREMENTED",
 

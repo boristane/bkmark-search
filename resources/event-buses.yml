@@ -33,7 +33,6 @@ Resources:
           - "BOOKMARK_ARCHIVED"
           - "BOOKMARK_UPDATED"
           - "BOOKMARK_DELETED"
-          - "BOOKMARK_FAVOURITED"
           - "BOOKMARK_RESTORED"
           - "BOOKMARK_INCREMENTED"
           - "USER_INTERNAL_ORGANISATION_JOINED"
