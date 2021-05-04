@@ -70,7 +70,7 @@ export async function removeCollectionFromUsers(data: IRemoveCollectionFromUsers
   try {
     const userIds = await data.collection.users;
     const promises = userIds.map(async id => {
-      const user = await database.getOwner(id, false);
+      const user = await database.getOwner(id, false) as IUser;
       const index = user.collections?.findIndex(collection => collection.uuid === data.collection.uuid && collection.ownerId === (data.collection.organisationId || data.collection.userId));
       if(!index) {
         return;

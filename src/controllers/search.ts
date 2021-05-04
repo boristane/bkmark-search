@@ -5,6 +5,7 @@ import algolia from "../services/algolia";
 import { failure, handleError, IHTTPResponse, success } from "../utils/http-responses";
 import { wrapper } from "../utils/controllers-helpers";
 import { IBookmark } from "../models/bookmark";
+import { IUser } from "../models/user";
 
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
   try {
@@ -14,13 +15,17 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
       return failure({ message: "Bad Request" }, 400);
     }
 
-    const user = await database.getOwner(userData.uuid, false);
+    const user = await database.getOwner(userData.uuid, false) as IUser;
 
-    if (!user.membership.isActive) {
-      return failure({ message: "Please activate your subscription" }, 402);
-    }
     if (organisationId && !user.organisations?.some((org) => org === organisationId)) {
       return failure({ message: "Forbidden" }, 403);
+    }
+
+    if(organisationId) {
+      const organisation = await database.getOwner(organisationId, true);
+      if (!organisation.membership.isActive) {
+        return failure({ message: "Please activate your subscription" }, 402);
+      }
     }
 
     const { uuid } = userData;

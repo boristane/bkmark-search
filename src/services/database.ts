@@ -146,7 +146,7 @@ async function changeOwnerMembership(
   }
 }
 
-async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser> {
+async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser | IOrganisation> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
