@@ -8,6 +8,15 @@ Resources:
       AttributeDefinitions:
         - AttributeName: partitionKey
           AttributeType: S
+        - AttributeName: type
+          AttributeType: S
       KeySchema:
         - AttributeName: partitionKey
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: type
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL

@@ -6,6 +6,7 @@ import moment from "dayjs";
 import Exception from "../utils/error";
 import { IUser } from "../models/user";
 import { IOrganisation } from "../models/organisation";
+import { DocumentClient } from "aws-sdk/clients/dynamodb";
 
 function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } {
   const tableName = process.env.PROJECTION_TABLE || "";
@@ -171,6 +172,43 @@ async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser
   }
 }
 
+async function getAllUsers(): Promise<IUser[]> {
+  const { tableName, dynamoDb } = initialise();
+  let lastEvaluatedKey: DocumentClient.Key | undefined = undefined;
+  let users: IUser[] = [];
+  do {
+    const params: DocumentClient.QueryInput = {
+      TableName: tableName,
+      IndexName: "type",
+      KeyConditionExpression: "#pk = :pkey",
+      ProjectionExpression: "#d",
+      ExpressionAttributeValues: {
+        ":pkey": `user`,
+      },
+      ExpressionAttributeNames: {
+        "#d": "data",
+        "#pk": "type",
+      },
+      ExclusiveStartKey: lastEvaluatedKey,
+    };
+    try {
+      const records = await dynamoDb.query(params).promise();
+      if (records.Items) {
+        const result = records.Items.map((item) => item.data) as IUser[];
+        users = [...users, ...result];
+        lastEvaluatedKey = records.LastEvaluatedKey;
+      } else {
+        throw Exception("Users not found", 404);
+      }
+    } catch (e) {
+      logger.error("Error getting the users", { params, error: e });
+      throw e;
+    }
+  } while (lastEvaluatedKey !== undefined);
+
+  return users;
+}
+
 async function deleteOwner(userId: string, isOrganisation: boolean): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
@@ -299,4 +337,5 @@ export default {
   appendOrganisationToUser,
   appendCollectionToUser,
   removeCollectionFromUser,
+  getAllUsers,
 };

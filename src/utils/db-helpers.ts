@@ -9,14 +9,7 @@ export function initialiseDb(tableName: string): { tableName: string, dynamoDb: 
   }
   const isOffline = process.env.ENV === "offline" ? true : false;
 
-  dynamoDb = isOffline ?
-    new DocumentClient(
-      {
-        region: "localhost",
-        endpoint: "http://localhost:8000",
-        apiVersion: '2012-08-10'
-      }) :
-    new DocumentClient({ apiVersion: '2012-08-10', region: process.env.REGION });
+  dynamoDb = new DocumentClient({ apiVersion: '2012-08-10', region: process.env.REGION });
 
   if (!isOffline) {
     AWSXRay.captureAWSClient((dynamoDb as any).service);
