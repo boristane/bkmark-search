@@ -33,11 +33,11 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     let hits: IBookmark[];
     if (!organisationId) {
       const promises = user.organisations!.map(async organisation => {
-        return await algolia.search(organisation, query, !!organisation);
+        return await algolia.search(organisation, query);
       }).flat();
       hits = (await Promise.all(promises)).flat();
     } else {
-      hits = (await algolia.search(organisationId, query, !!organisationId)).filter((hit) =>
+      hits = (await algolia.search(organisationId, query)).filter((hit) =>
         user.collections?.some(
           (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
         )

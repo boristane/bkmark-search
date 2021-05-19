@@ -2,9 +2,8 @@ import logger from "logger";
 import { IEventMessage } from "../models/events";
 import { createBookmarkObject, deleteBookmarkObject, editBookmarkObject } from "./bookmarks";
 import {
-  changeUserMembership,
-  initialiseUserIndex,
-  deleteUserIndex,
+  createUser,
+  deleteUser,
   addUserToOrganisation,
   addUserToCollection,
   removeCollectionFromUsers,
@@ -17,7 +16,7 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
   let res: boolean = false;
   switch (message.type) {
     case eventType.userCreated:
-      res = await initialiseUserIndex(data);
+      res = await createUser(data);
       break;
     case eventType.organisationCreated:
       res = await initialiseOrganisationIndex(data);
@@ -33,10 +32,7 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
       res = await removeCollectionFromUsers(data);
       break;
     case eventType.userDeleted:
-      res = await deleteUserIndex(data);
-      break;
-    case eventType.userMembeshipChanged:
-      res = await changeUserMembership(data);
+      res = await deleteUser(data);
       break;
     case eventType.organisationMembershipChanged:
       res = await changeOrganisationMembership(data);
@@ -63,7 +59,6 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
 export enum eventType {
   userCreated = "USER_CREATED",
   userDeleted = "USER_DELETED",
-  userMembeshipChanged = "USER_MEMBERSHIP_CHANGED",
 
   bookmarkCreated = "BOOKMARK_CREATED",
   bookmarkArchived = "BOOKMARK_ARCHIVED",

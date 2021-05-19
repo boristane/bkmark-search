@@ -18,6 +18,8 @@ async function addUsernameToUsers() {
     const user = users[i];
     logger.info("Processing user", { uuid: user.uuid });
     try {
+      // This won't work anymore actually. since the whole thing was refactored.
+      // @ts-ignore
       await algolia.deleteIndex(user.uuid, false);
     } catch (error) {
       logger.error("There was a problem deleting the bad indices in algolia", { user, error });

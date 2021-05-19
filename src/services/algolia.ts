@@ -5,10 +5,10 @@ import { initialiseAlgolia } from "../utils/algolia-helpers";
 import Exception from "../utils/error";
 import { omit } from "../utils/utils";
 
-async function createIndex(ownerId: string, isOrganisation: boolean) {
+async function createIndex(ownerId: string) {
   const client = initialiseAlgolia();
 
-  const index = client.initIndex(`${isOrganisation ? "organisation" : "user"}#${ownerId}`);
+  const index = client.initIndex(`organisation#${ownerId}`);
   try {
     await index.setSettings({
       customRanking: ["desc(created)"],
@@ -20,10 +20,10 @@ async function createIndex(ownerId: string, isOrganisation: boolean) {
   }
 }
 
-async function deleteIndex(ownerId: string, isOrganisation: boolean) {
+async function deleteIndex(ownerId: string) {
   const client = initialiseAlgolia();
 
-  const index = client.initIndex(`${isOrganisation ? "organisation" : "user"}#${ownerId}`);
+  const index = client.initIndex(`organisation#${ownerId}`);
   try {
     await index.delete();
   } catch (error) {
@@ -35,8 +35,7 @@ async function deleteIndex(ownerId: string, isOrganisation: boolean) {
 async function createBookmark(bookmark: IBookmarkRequest): Promise<string> {
   const client = initialiseAlgolia();
 
-  const ownerId = bookmark.organisationId || bookmark.userId;
-  const indexName = `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}`;
+  const indexName = `organisation#${bookmark.organisationId}`;
 
   const index = client.initIndex(indexName);
   const maxLength = 13000;
@@ -55,8 +54,7 @@ async function createBookmark(bookmark: IBookmarkRequest): Promise<string> {
 
 async function updateBookmark(bookmark: IBookmarkRequest, objectID: string): Promise<void> {
   const client = initialiseAlgolia();
-  const ownerId = bookmark.organisationId || bookmark.userId;
-  const indexName = `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}`;
+  const indexName = `organisation#${bookmark.organisationId}`;
 
   const index = client.initIndex(indexName);
 
@@ -70,8 +68,7 @@ async function updateBookmark(bookmark: IBookmarkRequest, objectID: string): Pro
 
 async function deleteBookmark(bookmark: IBookmarkRequest, objectId: string) {
   const client = initialiseAlgolia();
-  const ownerId = bookmark.organisationId || bookmark.userId;
-  const indexName = `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}`;
+  const indexName = `organisation#${bookmark.organisationId}`;
 
   const index = client.initIndex(indexName);
 
@@ -83,16 +80,16 @@ async function deleteBookmark(bookmark: IBookmarkRequest, objectId: string) {
   }
 }
 
-async function search(ownerId: string, query: string, isOrganisation: boolean): Promise<IBookmark[]> {
+async function search(ownerId: string, query: string): Promise<IBookmark[]> {
   const client = initialiseAlgolia();
   try {
-    const indexName = `${isOrganisation ? "organisation" : "user"}#${ownerId}`;
+    const indexName = `organisation#${ownerId}`;
 
     const index = client.initIndex(indexName);
     const hits = (await index.search(query)).hits.map((h) => omit(["_highlightResult", "fullPage"], h));
     return hits as IBookmark[];
   } catch (error) {
-    logger.error("There was an error running a search request on Algolia", { error, ownerId, query, isOrganisation });
+    logger.error("There was an error running a search request on Algolia", { error, ownerId, query });
     throw Exception("Unkown Error", 500);
   }
 }

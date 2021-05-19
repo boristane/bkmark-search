@@ -16,10 +16,9 @@ function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } 
 async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Promise<void> {
   const { tableName, dynamoDb } = initialise();
   const timestamp = moment().format();
-  const ownerId = bookmark.organisationId || bookmark.userId;
 
   const dbBookmark: IDatabaseItem = {
-    partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
+    partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
     data: {
       objectId,
     },
@@ -44,12 +43,11 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
 async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
-  const ownerId = bookmark.organisationId || bookmark.userId;
 
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
     },
   };
 
@@ -65,11 +63,10 @@ async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
 async function getBookmarkObjectId(bookmark: IBookmarkRequest): Promise<string> {
   const { tableName, dynamoDb } = initialise();
 
-  const ownerId = bookmark.organisationId || bookmark.userId;
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `${bookmark.organisationId ? "organisation" : "user"}#${ownerId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
     },
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {
@@ -119,13 +116,12 @@ async function createOwner(owner: IUser | IOrganisation, isOrganisation: boolean
 async function changeOwnerMembership(
   uuid: string,
   membership: { tier: number; isActive: boolean },
-  isOrganisation: boolean
 ): Promise<IUser | IOrganisation> {
   const { tableName, dynamoDb } = initialise();
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `${isOrganisation ? "organisation" : "user"}#${uuid}`,
+      partitionKey: `organisation#${uuid}`,
     },
     UpdateExpression: `set #data.#membership = :membership, #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
