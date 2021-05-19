@@ -1,5 +1,4 @@
 import { ICreateIndexRequest, IChangeUserMembershipRequest, IDeleteUserIndexRequest, IAddUserToOrganisationRequest, IAddUserToCollectionRequest, IRemoveCollectionFromUsersRequest } from "../schemas/user";
-import algolia from "../services/algolia";
 import logger from "logger";
 import { IUser } from "../models/user";
 import database from "../services/database";
@@ -15,7 +14,7 @@ export async function createUser(data: ICreateIndexRequest): Promise<boolean> {
     await database.createOwner(user, false);
     return true;
   } catch (error) {
-    logger.error("There was an error creating a user and index", { error, data });
+    logger.error("There was an error creating a user", { error, data });
     return false;
   }
 }
@@ -25,7 +24,7 @@ export async function deleteUser(data: IDeleteUserIndexRequest): Promise<boolean
     await database.deleteOwner(data.user.uuid, false);
     return true;
   } catch (error) {
-    logger.error("There was an error deleting a user and index", { error, data });
+    logger.error("There was an error deleting a user", { error, data });
     return false;
   }
 }
