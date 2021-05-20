@@ -1,4 +1,3 @@
-import { DynamoDB } from "aws-sdk";
 import { initialiseDb } from "../utils/db-helpers";
 import logger from "logger";
 import { IBookmarkRequest } from "../schemas/bookmark";
@@ -8,8 +7,8 @@ import { IUser } from "../models/user";
 import { IOrganisation } from "../models/organisation";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 
-function initialise(): { tableName: string; dynamoDb: DynamoDB.DocumentClient } {
-  const tableName = process.env.PROJECTION_TABLE || "";
+function initialise(): { tableName: string; dynamoDb: DocumentClient } {
+  const tableName = process.env.PROJECTION_TABLE!;
   return initialiseDb(tableName);
 }
 
