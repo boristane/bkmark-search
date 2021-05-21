@@ -39,14 +39,14 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   }
 }
 
-async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
+async function deleteBookmark(bookmark: IBookmarkRequest, organisationId?: string): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
 
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `organisation#${organisationId || bookmark.organisationId}#bookmark#${bookmark.uuid}`,
     },
   };
 
@@ -59,13 +59,13 @@ async function deleteBookmark(bookmark: IBookmarkRequest): Promise<void> {
   }
 }
 
-async function getBookmarkObjectId(bookmark: IBookmarkRequest): Promise<string> {
+async function getBookmarkObjectId(bookmark: IBookmarkRequest, organisationId?: string): Promise<string> {
   const { tableName, dynamoDb } = initialise();
 
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
+      partitionKey: `organisation#${organisationId || bookmark.organisationId}#bookmark#${bookmark.uuid}`,
     },
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {

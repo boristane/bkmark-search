@@ -29,9 +29,14 @@ export async function deleteBookmarkObject(data: { bookmark: IBookmarkRequest })
   return true;
 }
 
-export async function editBookmarkObject(data: { bookmark: IBookmarkRequest }): Promise<boolean> {
+export async function editBookmarkObject(data: { bookmark: IBookmarkRequest; previousAttributes: { organisationId?: string } }): Promise<boolean> {
   try {
-    const objectId = await database.getBookmarkObjectId(data.bookmark);
+    const oldOrganisationId = data.previousAttributes.organisationId;
+    const objectId = await database.getBookmarkObjectId(data.bookmark, oldOrganisationId);
+    if(data.bookmark.organisationId !== oldOrganisationId) {
+      await database.createBookmark(objectId, data.bookmark);
+      await database.deleteBookmark(data.bookmark, oldOrganisationId);
+    }
     await algolia.updateBookmark(data.bookmark, objectId);
   } catch (error) {
     logger.error("There was an error updating a bookmark from search", { data, error });
