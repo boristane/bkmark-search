@@ -33,7 +33,7 @@ export async function editBookmarkObject(data: { bookmark: IBookmarkRequest; pre
   try {
     const oldOrganisationId = data.previousAttributes.organisationId;
     const objectId = await database.getBookmarkObjectId(data.bookmark, oldOrganisationId);
-    if(data.bookmark.organisationId !== oldOrganisationId) {
+    if(oldOrganisationId && data.bookmark.organisationId !== oldOrganisationId) {
       await database.createBookmark(objectId, data.bookmark);
       await database.deleteBookmark(data.bookmark, oldOrganisationId);
     }
