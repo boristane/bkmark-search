@@ -23,7 +23,7 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
 
     if(organisationId) {
       const organisation = await database.getOwner(organisationId, true);
-      if (!organisation.membership.isActive) {
+      if (!organisation.membership.isActive || organisation.membership.tier === 0) {
         return failure({ message: "Please activate your subscription" }, 402);
       }
     }
