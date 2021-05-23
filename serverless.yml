@@ -133,3 +133,17 @@ functions:
           cors: true
           authorizer: ${self:custom.authorizer}
 
+  search-internal:
+    handler: .build/src/controllers/search-internal.handler
+    description: ${opt:stage} - Search for a query for an internal route
+    memorySize: 2048
+    events:
+      - http:
+          path: /internal/search
+          method: post
+          cors: true
+          authorizer: aws_iam
+          request:
+            schema:
+              application/json: ${file(./resources/schemas/search-internal.json)}
+
