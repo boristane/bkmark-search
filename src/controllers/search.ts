@@ -21,9 +21,12 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
       return failure({ message: "Forbidden" }, 403);
     }
 
+    let fullTextSearch = true;
+
     if(organisationId) {
       const organisation = await database.getOwner(organisationId, true);
-      if (!organisation.membership.isActive || organisation.membership.tier === 0) {
+      fullTextSearch = organisation.membership.tier !== 0;
+      if (!organisation.membership.isActive) {
         return failure({ message: "Please activate your subscription" }, 402);
       }
     }
@@ -33,11 +36,11 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     let hits: IBookmark[];
     if (!organisationId) {
       const promises = user.organisations!.map(async organisation => {
-        return await algolia.search(organisation, query);
+        return await algolia.search(organisation, query, fullTextSearch);
       }).flat();
       hits = (await Promise.all(promises)).flat();
     } else {
-      hits = (await algolia.search(organisationId, query)).filter((hit) =>
+      hits = (await algolia.search(organisationId, query, fullTextSearch)).filter((hit) =>
         user.collections?.some(
           (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
         )

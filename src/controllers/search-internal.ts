@@ -20,7 +20,7 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
     const promises = user.organisations!.map(async organisation => {
       const org = await database.getOwner(organisation, true);
       if(org.membership.tier < 2) return [];
-      return await algolia.search(organisation, query);
+      return await algolia.search(organisation, query, true);
     }).flat();
     const hits = (await Promise.all(promises)).flat();
 

@@ -80,13 +80,16 @@ async function deleteBookmark(bookmark: IBookmarkRequest, objectId: string) {
   }
 }
 
-async function search(ownerId: string, query: string): Promise<IBookmark[]> {
+async function search(ownerId: string, query: string, isFullText: boolean): Promise<IBookmark[]> {
   const client = initialiseAlgolia();
   try {
     const indexName = `organisation#${ownerId}`;
-
+    let searchOptions: Record<string, any> = {};
+    if (!isFullText) {
+      searchOptions.restrictSearchableAttributes = ["fullPage.body"]
+    }
     const index = client.initIndex(indexName);
-    const hits = (await index.search(query)).hits.map((h) => omit(["_highlightResult", "fullPage"], h));
+    const hits = (await index.search(query, searchOptions)).hits.map((h) => omit(["_highlightResult", "fullPage"], h));
     return hits as IBookmark[];
   } catch (error) {
     logger.error("There was an error running a search request on Algolia", { error, ownerId, query });
