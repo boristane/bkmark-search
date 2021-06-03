@@ -61,7 +61,41 @@ async function updateBookmark(bookmark: IBookmarkRequest, objectID: string): Pro
   try {
     await index.partialUpdateObject({ ...bookmark, objectID });
   } catch (error) {
-    logger.error("There was an error udating an object in algolia", { error, bookmark });
+    logger.error("There was an error updating an object in algolia", { error, bookmark });
+    throw error;
+  }
+}
+
+async function setFullPageToBookmark(organisationId: string, fullPage: { body: string }, objectID: string): Promise<void> {
+  const client = initialiseAlgolia();
+  const indexName = `organisation#${organisationId}`;
+
+  const index = client.initIndex(indexName);
+
+  try {
+    await index.partialUpdateObject({ fullPage, objectID });
+  } catch (error) {
+    logger.error("There was an error setting the fullpage of an object in algolia", { error, objectID, organisationId });
+    throw error;
+  }
+}
+
+async function removeFullPageFromBookmarks(organisationId: string, objectIDs: string[]): Promise<void> {
+  const client = initialiseAlgolia();
+  const indexName = `organisation#${organisationId}`;
+
+  const index = client.initIndex(indexName);
+  const objects = objectIDs.map(objectID => {
+    return {
+      objectID,
+      fullPage: { body: "" }
+    }
+  })
+
+  try {
+    await index.partialUpdateObjects(objects);
+  } catch (error) {
+    logger.error("There was an error udating an object in algolia", { error, objects });
     throw error;
   }
 }
@@ -76,6 +110,20 @@ async function deleteBookmark(bookmark: IBookmarkRequest, objectId: string) {
     await index.deleteObject(objectId);
   } catch (error) {
     logger.error("There was an error deleting a bookmark object from an indices", { error, bookmark, objectId });
+    throw error;
+  }
+}
+
+async function getBookmark(organisationId: string, objectId: string): Promise<IBookmark> {
+  const client = initialiseAlgolia();
+  const indexName = `organisation#${organisationId}`;
+
+  const index = client.initIndex(indexName);
+
+  try {
+    return (await index.getObject<IBookmark>(objectId));
+  } catch (error) {
+    logger.error("There was an error getting a bookmark object from an indices", { error, organisationId, objectId });
     throw error;
   }
 }
@@ -104,4 +152,7 @@ export default {
   createBookmark,
   deleteBookmark,
   updateBookmark,
+  removeFullPageFromBookmarks,
+  getBookmark,
+  setFullPageToBookmark,
 };

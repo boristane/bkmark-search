@@ -1,13 +1,17 @@
 import { IBookmarkRequest } from "../schemas/bookmark";
 import logger from "logger";
 import algolia from "../services/algolia";
-import database from "../services/database";
+import database from "../services/database2";
 import { getFullPage } from "../services/scrapper";
 
 export async function createBookmarkObject(data: { bookmark: IBookmarkRequest }): Promise<boolean> {
   try {
     const { bookmark } = data;
-    const fullPage = await getFullPage(bookmark.url);
+    const organisation = await database.getOwner(bookmark.organisationId, true);
+    let fullPage = { body: "" };
+    if (organisation.membership.tier > 0) {
+      fullPage = await getFullPage(bookmark.url);
+    }
     const objectId = await algolia.createBookmark({ fullPage, ...bookmark });
     await database.createBookmark(objectId, bookmark);
   } catch (error) {
@@ -19,7 +23,7 @@ export async function createBookmarkObject(data: { bookmark: IBookmarkRequest })
 
 export async function deleteBookmarkObject(data: { bookmark: IBookmarkRequest }): Promise<boolean> {
   try {
-    const objectId = await database.getBookmarkObjectId(data.bookmark);
+    const { objectId } = await database.getBookmarkObjectId(data.bookmark);
     await algolia.deleteBookmark(data.bookmark, objectId);
     await database.deleteBookmark(data.bookmark);
   } catch (error) {
@@ -29,13 +33,15 @@ export async function deleteBookmarkObject(data: { bookmark: IBookmarkRequest })
   return true;
 }
 
-export async function editBookmarkObject(data: { bookmark: IBookmarkRequest; previousAttributes: { organisationId?: string } }): Promise<boolean> {
+export async function editBookmarkObject(data: { bookmark: IBookmarkRequest; previousAttributes: { organisationId?: string, collectionId?: string } }): Promise<boolean> {
   try {
-    const oldOrganisationId = data.previousAttributes.organisationId;
-    const objectId = await database.getBookmarkObjectId(data.bookmark, oldOrganisationId);
-    if(oldOrganisationId && data.bookmark.organisationId !== oldOrganisationId) {
+    const previousAttributes = data.previousAttributes;
+    const { objectId } = await database.getBookmarkObjectId(data.bookmark, previousAttributes);
+    const shouldRecreate = previousAttributes.organisationId !== data.bookmark.organisationId || previousAttributes.collectionId !== data.bookmark.collection.uuid;   
+    
+    if (shouldRecreate) {
       await database.createBookmark(objectId, data.bookmark);
-      await database.deleteBookmark(data.bookmark, oldOrganisationId);
+      await database.deleteBookmark(data.bookmark, previousAttributes);
     }
     await algolia.updateBookmark(data.bookmark, objectId);
   } catch (error) {

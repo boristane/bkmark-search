@@ -99,6 +99,9 @@ provider:
         - Fn::GetAtt:
           - ProjectionTable
           - Arn 
+        - Fn::GetAtt:
+          - ProjectionTable2
+          - Arn 
     - Effect: Allow
       Action:
         - xray:PutTraceSegments
@@ -110,6 +113,8 @@ provider:
     LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}}
     PROJECTION_TABLE: 
       Ref: ProjectionTable
+    PROJECTION_TABLE_2: 
+      Ref: ProjectionTable2
     ALGOLIA_APP_ID: ${file(./${opt:stage}.yml):algoliaAppId}
     ALGOLIA_API_KEY: ${ssm:/boristane/bkmark/algolia/api-key~true}
 

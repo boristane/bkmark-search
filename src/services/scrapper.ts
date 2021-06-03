@@ -4,7 +4,7 @@ import stopwords from "../data/stopwords.json";
 
 const defaultStopwords = stopwords.words;
 
-export async function getFullPage(url: string) {
+export async function getFullPage(url: string): Promise<{ body: string }> {
   return new Promise((resolve, reject) => {
     request.get(url, { timeout: 2000 }, async (error: any, response: any, body: any) => {
       if (error) {
@@ -26,9 +26,9 @@ export async function getFullPage(url: string) {
 function getBody($: cheerio.Root): string {
   const body = $("body").text().replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, ' ');
   const res = body
-      .match(/[a-zA-ZÀ-ÖØ-öø-ÿ]+/g)?.filter(word => {
-        return !(word.length < 2 || word.match(/^\d/))
-      }).map(word => word.toLowerCase())
-      .filter(t => !defaultStopwords.includes(t))
+    .match(/[a-zA-ZÀ-ÖØ-öø-ÿ]+/g)?.filter(word => {
+      return !(word.length < 2 || word.match(/^\d/))
+    }).map(word => word.toLowerCase())
+    .filter(t => !defaultStopwords.includes(t))
   return res?.join(" ") || "";
 }

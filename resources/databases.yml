@@ -20,3 +20,29 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
+
+  # Projection Table 2
+  ProjectionTable2:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "${file(./${opt:stage}.yml):tableName}-projection-2"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: partitionKey
+          AttributeType: S
+        - AttributeName: sortKey
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: partitionKey
+          KeyType: HASH
+        - AttributeName: sortKey
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: type
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL

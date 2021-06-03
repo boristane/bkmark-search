@@ -1,7 +1,7 @@
 import { ICreateIndexRequest, IChangeUserMembershipRequest, IDeleteUserIndexRequest, IAddUserToOrganisationRequest, IAddUserToCollectionRequest, IRemoveCollectionFromUsersRequest } from "../schemas/user";
 import logger from "logger";
 import { IUser } from "../models/user";
-import database from "../services/database";
+import database from "../services/database2";
 
 export async function createUser(data: ICreateIndexRequest): Promise<boolean> {
   try {

@@ -8,7 +8,7 @@ import { IOrganisation } from "../models/organisation";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 
 function initialise(): { tableName: string; dynamoDb: DocumentClient } {
-  const tableName = process.env.PROJECTION_TABLE!;
+  const tableName = process.env.PROJECTION_TABLE_2!;
   return initialiseDb(tableName);
 }
 
@@ -17,11 +17,17 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   const timestamp = moment().format();
 
   const dbBookmark: IDatabaseItem = {
-    partitionKey: `organisation#${bookmark.organisationId}#bookmark#${bookmark.uuid}`,
+    partitionKey: `organisation#${bookmark.organisationId}`,
+    sortKey: `collection#${bookmark.collection.uuid}#bookmark#${bookmark.uuid}`,
     data: {
       objectId,
+      organisationId: bookmark.organisationId,
+      collectionId: bookmark.collection.uuid,
+      uuid: bookmark.uuid,
+      url: bookmark.url,
     },
     created: timestamp,
+    updated: timestamp,
     type: "bookmark",
   };
   const params = {
@@ -39,15 +45,23 @@ async function createBookmark(objectId: string, bookmark: IBookmarkRequest): Pro
   }
 }
 
-async function deleteBookmark(bookmark: IBookmarkRequest, organisationId?: string): Promise<void> {
+async function deleteBookmark(bookmark: IBookmarkRequest, previousAttributes?: { organisationId?: string, collectionId?: string }): Promise<void> {
   const { tableName, dynamoDb } = initialise();
+  let key = {
+    partitionKey: `organisation#${bookmark.organisationId}`,
+    sortKey: `collection#${bookmark.collectionId}#bookmark#${bookmark.uuid}`,
+  }
 
+  if (previousAttributes && Object.keys(previousAttributes).length > 0) {
+    key = {
+      partitionKey: `organisation#${previousAttributes.organisationId}`,
+      sortKey: `collection#${previousAttributes.collectionId}#bookmark#${bookmark.uuid}`,
+    }
+  }
 
   const params = {
     TableName: tableName,
-    Key: {
-      partitionKey: `organisation#${organisationId || bookmark.organisationId}#bookmark#${bookmark.uuid}`,
-    },
+    Key: key,
   };
 
   try {
@@ -59,14 +73,24 @@ async function deleteBookmark(bookmark: IBookmarkRequest, organisationId?: strin
   }
 }
 
-async function getBookmarkObjectId(bookmark: IBookmarkRequest, organisationId?: string): Promise<string> {
+async function getBookmarkObjectId(bookmark: IBookmarkRequest, previousAttributes?: { organisationId?: string, collectionId?: string }): Promise<{ organisationId: string, collectionId: string, number: string, objectId: string, url: string }> {
   const { tableName, dynamoDb } = initialise();
+
+  let key = {
+    partitionKey: `organisation#${bookmark.organisationId}`,
+    sortKey: `collection#${bookmark.collection.uuid}#bookmark#${bookmark.uuid}`,
+  }
+
+  if (previousAttributes && Object.keys(previousAttributes).length > 0) {
+    key = {
+      partitionKey: `organisation#${previousAttributes.organisationId}`,
+      sortKey: `collection#${previousAttributes.collectionId}#bookmark#${bookmark.uuid}`,
+    }
+  }
 
   const params = {
     TableName: tableName,
-    Key: {
-      partitionKey: `organisation#${organisationId || bookmark.organisationId}#bookmark#${bookmark.uuid}`,
-    },
+    Key: key,
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {
       "#data": "data",
@@ -75,7 +99,7 @@ async function getBookmarkObjectId(bookmark: IBookmarkRequest, organisationId?: 
   try {
     const record = await dynamoDb.get(params).promise();
     if (record.Item) {
-      return record.Item.data.objectId;
+      return record.Item.data;
     } else {
       throw Exception("Bookmark object not found", 404);
     }
@@ -92,6 +116,7 @@ async function createOwner(owner: IUser | IOrganisation, isOrganisation: boolean
 
   const dbUser: IDatabaseItem = {
     partitionKey: `${isOrganisation ? "organisation" : "user"}#${owner.uuid}`,
+    sortKey: `${isOrganisation ? "organisation" : "user"}`,
     data: owner,
     created: owner.created,
     updated: owner.updated,
@@ -121,6 +146,7 @@ async function changeOwnerMembership(
     TableName: tableName,
     Key: {
       partitionKey: `organisation#${uuid}`,
+      sortKey: "organisation",
     },
     UpdateExpression: `set #data.#membership = :membership, #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
@@ -148,6 +174,7 @@ async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser
     TableName: tableName,
     Key: {
       partitionKey: `${isOrganisation ? "organisation" : "user"}#${ownerId}`,
+      sortKey: `${isOrganisation ? "organisation" : "user"}`,
     },
     ProjectionExpression: "#data",
     ExpressionAttributeNames: {
@@ -159,10 +186,10 @@ async function getOwner(ownerId: string, isOrganisation: boolean): Promise<IUser
     if (record.Item) {
       return record.Item.data;
     } else {
-      throw Exception("User not found", 404);
+      throw Exception("Owner not found", 404);
     }
   } catch (e) {
-    logger.error("Error getting the user", { params, error: e });
+    logger.error("Error getting the owner", { params, error: e });
     throw e;
   }
 }
@@ -204,54 +231,14 @@ async function getAllUsers(): Promise<IUser[]> {
   return users;
 }
 
-async function getAllBookmarks(): Promise<{objectId: string, organisationId: string; uuid: string}[]> {
-  const { tableName, dynamoDb } = initialise();
-  let lastEvaluatedKey: DocumentClient.Key | undefined = undefined;
-  let users: {objectId: string, organisationId: string; uuid: string}[] = [];
-  do {
-    const params: DocumentClient.QueryInput = {
-      TableName: tableName,
-      IndexName: "type",
-      KeyConditionExpression: "#pk = :pkey",
-      ExpressionAttributeValues: {
-        ":pkey": `bookmark`,
-      },
-      ExpressionAttributeNames: {
-        "#pk": "type",
-      },
-      ExclusiveStartKey: lastEvaluatedKey,
-    };
-    try {
-      const records = await dynamoDb.query(params).promise();
-      if (records.Items) {
-        const result = records.Items.map((item) => {
-          return {
-            objectId: item.data.objectId,
-            organisationId: item.partitionKey.split("#")[1],
-            uuid: item.partitionKey.split("#")[3],
-          }
-        }) as {objectId: string, organisationId: string; uuid: string}[];
-        users = [...users, ...result];
-        lastEvaluatedKey = records.LastEvaluatedKey;
-      } else {
-        throw Exception("Bookmarks not found", 404);
-      }
-    } catch (e) {
-      logger.error("Error getting the bookmarks", { params, error: e });
-      throw e;
-    }
-  } while (lastEvaluatedKey !== undefined);
-
-  return users;
-}
-
-async function deleteOwner(userId: string, isOrganisation: boolean): Promise<void> {
+async function deleteOwner(ownerId: string, isOrganisation: boolean): Promise<void> {
   const { tableName, dynamoDb } = initialise();
 
   const params = {
     TableName: tableName,
     Key: {
-      partitionKey: `${isOrganisation ? "organisation" : "user"}#${userId}`,
+      partitionKey: `${isOrganisation ? "organisation" : "user"}#${ownerId}`,
+      sortKey: `${isOrganisation ? "organisation" : "user"}`,
     },
   };
 
@@ -270,6 +257,7 @@ async function appendOrganisationToUser(userId: string, organisationId: string):
     TableName: tableName,
     Key: {
       partitionKey: `user#${userId}`,
+      sortKey: "user"
     },
     UpdateExpression: `set #data.#organisations = list_append(if_not_exists(#data.#organisations, :emptyArray), :organisationId), #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
@@ -303,6 +291,7 @@ async function appendCollectionToUser(
     TableName: tableName,
     Key: {
       partitionKey: `user#${userId}`,
+      sortKey: "user"
     },
     UpdateExpression: `set #data.#collections = list_append(if_not_exists(#data.#collections, :emptyArray), :collection), #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
@@ -334,6 +323,7 @@ async function removeCollectionFromUser(
     TableName: tableName,
     Key: {
       partitionKey: `user#${userId}`,
+      sortKey: "user"
     },
     UpdateExpression: `remove #data.#collections[${index}] set #data.updated = :updated, updated = :updated`,
     ExpressionAttributeNames: {
@@ -352,6 +342,46 @@ async function removeCollectionFromUser(
     logger.error(message, { params, error: e });
     throw e;
   }
+}
+
+async function getAllObjectIDs(organisationId: string): Promise<{ organisationId: string, collectionId: string, number: string, objectId: string, url: string }[]> {
+  const { tableName, dynamoDb } = initialise();
+
+  let lastEvaluatedKey: DocumentClient.Key | undefined = undefined;
+  let items: { organisationId: string, collectionId: string, number: string, objectId: string, url: string }[] = [];
+
+  do {
+    const params: DocumentClient.QueryInput = {
+      TableName: tableName,
+      KeyConditionExpression: "#partitionKey = :partitionKey",
+      ProjectionExpression: "#d",
+      ExpressionAttributeNames: {
+        "#partitionKey": "partitionKey",
+        "#d": "data",
+      },
+      ExpressionAttributeValues: {
+        ":partitionKey": `organisation${organisationId}`,
+      },
+      ScanIndexForward: false,
+      ExclusiveStartKey: lastEvaluatedKey,
+    };
+
+    try {
+      const records = await dynamoDb.query(params).promise();
+      if (records.Items) {
+        const result = records.Items.map((item) => item.data);
+        items = [...items, ...result];
+        lastEvaluatedKey = records.LastEvaluatedKey;
+      } else {
+        throw Exception("Items not found", 404);
+      }
+    } catch (e) {
+      logger.error("Error getting all the items by objectIds", { params, error: e });
+      throw e;
+    }
+  } while (lastEvaluatedKey !== undefined);
+
+  return items;
 }
 
 async function getAllByType(type: string): Promise<Record<string, any>[]> {
@@ -397,6 +427,7 @@ async function getAllByType(type: string): Promise<Record<string, any>[]> {
 
 interface IDatabaseItem {
   partitionKey: string;
+  sortKey: string;
   data: Record<string, any>;
   created: string;
   updated?: string;
@@ -415,6 +446,6 @@ export default {
   appendCollectionToUser,
   removeCollectionFromUser,
   getAllUsers,
+  getAllObjectIDs,
   getAllByType,
-  getAllBookmarks,
 };

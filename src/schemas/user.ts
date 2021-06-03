@@ -17,6 +17,7 @@ export interface IChangeOrganisationMembershipRequest {
     uuid: string;
   };
   membership: { tier: number; isActive: boolean };
+  oldMembership: { tier: number; isActive: boolean };
 }
 
 export interface IDeleteUserIndexRequest {

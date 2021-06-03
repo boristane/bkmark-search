@@ -1,4 +1,4 @@
-import database from "../services/database";
+import database from "../services/database2";
 import logger from "logger";
 import { Context, APIGatewayEvent } from "aws-lambda";
 import algolia from "../services/algolia";
