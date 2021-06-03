@@ -37,7 +37,9 @@ export async function editBookmarkObject(data: { bookmark: IBookmarkRequest; pre
   try {
     const previousAttributes = data.previousAttributes;
     const { objectId } = await database.getBookmarkObjectId(data.bookmark, previousAttributes);
-    const shouldRecreate = previousAttributes.organisationId !== data.bookmark.organisationId || previousAttributes.collectionId !== data.bookmark.collection.uuid;   
+    const isDifferentCollection = previousAttributes.collectionId && previousAttributes.collectionId !== data.bookmark.collection.uuid;
+    const isDifferentOrganisation = previousAttributes.organisationId && previousAttributes.organisationId !== data.bookmark.organisationId;
+    const shouldRecreate = isDifferentCollection || isDifferentOrganisation;   
     
     if (shouldRecreate) {
       await database.createBookmark(objectId, data.bookmark);
