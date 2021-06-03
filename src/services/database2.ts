@@ -344,11 +344,11 @@ async function removeCollectionFromUser(
   }
 }
 
-async function getAllObjectIDs(organisationId: string): Promise<{ organisationId: string, collectionId: string, number: string, objectId: string, url: string }[]> {
+async function getAllObjectIDs(organisationId: string): Promise<{ organisationId: string, collectionId: string, uuid: number, objectId: string, url: string }[]> {
   const { tableName, dynamoDb } = initialise();
 
   let lastEvaluatedKey: DocumentClient.Key | undefined = undefined;
-  let items: { organisationId: string, collectionId: string, number: string, objectId: string, url: string }[] = [];
+  let items: { organisationId: string, collectionId: string, uuid: number, objectId: string, url: string }[] = [];
 
   do {
     const params: DocumentClient.QueryInput = {
@@ -360,7 +360,7 @@ async function getAllObjectIDs(organisationId: string): Promise<{ organisationId
         "#d": "data",
       },
       ExpressionAttributeValues: {
-        ":partitionKey": `organisation${organisationId}`,
+        ":partitionKey": `organisation#${organisationId}`,
       },
       ScanIndexForward: false,
       ExclusiveStartKey: lastEvaluatedKey,
