@@ -128,6 +128,15 @@ functions:
       - sqs:
           arn: !GetAtt CommandsQueue.Arn
   
+  command-dead-letter:
+    handler: .build/main.command
+    reservedConcurrency: 10
+    memorySize: 512
+    description: ${opt:stage} - Hanlde commands
+    events:
+      - sqs:
+          arn: !GetAtt CommandsDeadLetterQueue.Arn
+        
   search:
     handler: .build/src/controllers/search.handler
     description: ${opt:stage} - searches for a query
