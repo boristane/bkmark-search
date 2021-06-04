@@ -78,7 +78,7 @@ async function getBookmarkObjectId(bookmark: IBookmarkRequest, previousAttribute
 
   let key = {
     partitionKey: `organisation#${bookmark.organisationId}`,
-    sortKey: `collection#${bookmark.collection.uuid}#bookmark#${bookmark.uuid}`,
+    sortKey: `collection#${bookmark.collection?.uuid || bookmark.collectionId}#bookmark#${bookmark.uuid}`,
   }
 
   if (previousAttributes && Object.keys(previousAttributes).length > 0) {
@@ -393,17 +393,17 @@ async function getAllByType(type: string): Promise<Record<string, any>[]> {
   do {
     const params: DocumentClient.QueryInput = {
       TableName: tableName,
-    IndexName: "type",
-    KeyConditionExpression: "#type = :type",
-    ProjectionExpression: "#d",
-    ExpressionAttributeNames: {
-      "#type": "type",
-      "#d": "data",
-    },
-    ExpressionAttributeValues: {
-      ":type": type,
-    },
-    ScanIndexForward: false,
+      IndexName: "type",
+      KeyConditionExpression: "#type = :type",
+      ProjectionExpression: "#d",
+      ExpressionAttributeNames: {
+        "#type": "type",
+        "#d": "data",
+      },
+      ExpressionAttributeValues: {
+        ":type": type,
+      },
+      ScanIndexForward: false,
       ExclusiveStartKey: lastEvaluatedKey,
     };
 
