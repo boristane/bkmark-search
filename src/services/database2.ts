@@ -353,14 +353,16 @@ async function getAllObjectIDs(organisationId: string): Promise<{ organisationId
   do {
     const params: DocumentClient.QueryInput = {
       TableName: tableName,
-      KeyConditionExpression: "#partitionKey = :partitionKey",
+      KeyConditionExpression: "#partitionKey = :partitionKey and begins_with(#sortKey, :sortKey)",
       ProjectionExpression: "#d",
       ExpressionAttributeNames: {
         "#partitionKey": "partitionKey",
+        "#sortKey": "sortKey",
         "#d": "data",
       },
       ExpressionAttributeValues: {
         ":partitionKey": `organisation#${organisationId}`,
+        ":sortKey": `collection`,
       },
       ScanIndexForward: false,
       ExclusiveStartKey: lastEvaluatedKey,
