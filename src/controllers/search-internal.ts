@@ -4,7 +4,6 @@ import { Context, APIGatewayEvent } from "aws-lambda";
 import algolia from "../services/algolia";
 import { failure, handleError, IHTTPResponse, success } from "../utils/http-responses";
 import { wrapper } from "../utils/controllers-helpers";
-import { IBookmark } from "../models/bookmark";
 import { IUser } from "../models/user";
 
 async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
