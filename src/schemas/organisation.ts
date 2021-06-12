@@ -6,3 +6,9 @@ export interface ICreateOrganisationIndexRequest {
   };
   membership: { tier: number; isActive: boolean };
 }
+
+export interface IDeleteOrganisationIndexRequest {
+  organisation: {
+    uuid: string;
+  };
+}

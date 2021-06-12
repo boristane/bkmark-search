@@ -4,11 +4,13 @@ import { createBookmarkObject, deleteBookmarkObject, editBookmarkObject } from "
 import {
   createUser,
   deleteUser,
-  addUserToOrganisation,
-  addUserToCollection,
+  addOrganisationToUser,
+  addCollectionToUser,
   removeCollectionFromUsers,
+  removeCollectionFromUser,
+  removeOrganisationFromUser,
 } from "./users";
-import { changeOrganisationMembership, initialiseOrganisationIndex } from "./organisations";
+import { changeOrganisationMembership, deleteOrganisation, initialiseOrganisationIndex } from "./organisations";
 
 export async function handleMessage(message: IEventMessage): Promise<boolean> {
   const data = message.data;
@@ -22,17 +24,26 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
       res = await initialiseOrganisationIndex(data);
       break;
     case eventType.userInternalOrganisationJoined:
-      res = await addUserToOrganisation(data);
+      res = await addOrganisationToUser(data);
+      break;
+    case eventType.userInternalOrganisationLeft:
+      res = await removeOrganisationFromUser(data);
       break;
     case eventType.collectionCreated:
     case eventType.userInternalCollectionJoined:
-      res = await addUserToCollection(data);
+      res = await addCollectionToUser(data);
+      break;
+    case eventType.userInternalCollectionLeft:
+      res = await removeCollectionFromUser(data);
       break;
     case eventType.collectionDeleted:
       res = await removeCollectionFromUsers(data);
       break;
     case eventType.userDeleted:
       res = await deleteUser(data);
+      break;
+    case eventType.organisationDeleted:
+      res = await deleteOrganisation(data);
       break;
     case eventType.organisationMembershipChanged:
       res = await changeOrganisationMembership(data);
@@ -59,19 +70,22 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
 export enum eventType {
   userCreated = "USER_CREATED",
   userDeleted = "USER_DELETED",
-
+  
   bookmarkCreated = "BOOKMARK_CREATED",
   bookmarkArchived = "BOOKMARK_ARCHIVED",
   bookmarkUpdated = "BOOKMARK_UPDATED",
   bookmarkDeleted = "BOOKMARK_DELETED",
   bookmarkRestored = "BOOKMARK_RESTORED",
   bookmarkIncremented = "BOOKMARK_INCREMENTED",
-
+  
   organisationCreated = "ORGANISATION_CREATED",
   organisationMembershipChanged = "ORGANISATION_MEMBERSHIP_CHANGED",
+  organisationDeleted = "ORGANISATION_DELETED",
 
   userInternalOrganisationJoined = "USER_INTERNAL_ORGANISATION_JOINED",
   userInternalCollectionJoined = "USER_INTERNAL_COLLECTION_JOINED",
+  userInternalOrganisationLeft = "USER_INTERNAL_ORGANISATION_LEFT",
+  userInternalCollectionLeft = "USER_INTERNAL_COLLECTION_LEFT",
 
   collectionCreated = "COLLECTION_CREATED",
   collectionDeleted = "COLLECTION_DELETED",

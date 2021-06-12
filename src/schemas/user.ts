@@ -31,9 +31,19 @@ export interface IAddUserToOrganisationRequest {
   organisation: { uuid: string };
 }
 
+export interface IRemoveUserFromOrganisationRequest {
+  user: { uuid: string };
+  organisation: { uuid: string };
+}
+
 export interface IAddUserToCollectionRequest {
   user?: { uuid: string };
-  collection: { uuid: string; organisationId?: string, userId: string; };
+  collection: { uuid: string; organisationId: string, userId: string; };
+}
+
+export interface IRemoveUserFromCollectionRequest {
+  user: { uuid: string };
+  collection: { uuid: string; organisationId: string, userId: string; };
 }
 
 export interface IRemoveCollectionFromUsersRequest {

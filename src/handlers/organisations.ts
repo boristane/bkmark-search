@@ -1,4 +1,4 @@
-import { ICreateOrganisationIndexRequest } from "../schemas/organisation";
+import { ICreateOrganisationIndexRequest, IDeleteOrganisationIndexRequest } from "../schemas/organisation";
 import algolia from "../services/algolia";
 import logger from "logger";
 import database from "../services/database2";
@@ -41,6 +41,17 @@ export async function changeOrganisationMembership(data: IChangeOrganisationMemb
   } catch (err) {
     const message = "Unexpected error when changing the membership of a user";
     logger.error(message, { data, error: err });
+    return false;
+  }
+}
+
+export async function deleteOrganisation(data: IDeleteOrganisationIndexRequest): Promise<boolean> {
+  try {
+    await database.deleteOwner(data.organisation.uuid, true);
+    await algolia.deleteIndex(data.organisation.uuid);
+    return true;
+  } catch (error) {
+    logger.error("There was an error deleting an organisation", { error, data });
     return false;
   }
 }

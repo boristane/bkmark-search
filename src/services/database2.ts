@@ -280,6 +280,33 @@ async function appendOrganisationToUser(userId: string, organisationId: string):
   }
 }
 
+async function removeOrganisationFromUser(userId: string, index: number): Promise<IUser> {
+  const { tableName, dynamoDb } = initialise();
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `user#${userId}`,
+      sortKey: "user"
+    },
+    UpdateExpression: `set #data.updated = :updated, updated = :updated remove #data.#organisations[${index}]`,
+    ExpressionAttributeNames: {
+      "#data": "data",
+      "#organisations": "organisations",
+    },
+    ExpressionAttributeValues: {
+      ":updated": moment().format(),
+    },
+    ReturnValues: "ALL_NEW",
+  };
+  try {
+    return (await dynamoDb.update(params).promise()).Attributes?.data;
+  } catch (e) {
+    const message = "Failed to append an organisations to a user in dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
 async function appendCollectionToUser(
   userId: string,
   ownerId: string,
@@ -450,4 +477,5 @@ export default {
   getAllUsers,
   getAllObjectIDs,
   getAllByType,
+  removeOrganisationFromUser,
 };
