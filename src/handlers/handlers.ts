@@ -1,6 +1,6 @@
 import logger from "logger";
 import { IEventMessage } from "../models/events";
-import { createBookmarkObject, deleteBookmarkObject, editBookmarkObject } from "./bookmarks";
+import { createBookmarkNotification, createBookmarkObject, deleteBookmarkNotification, deleteBookmarkObject, editBookmarkObject } from "./bookmarks";
 import {
   createUser,
   deleteUser,
@@ -52,6 +52,12 @@ export async function handleMessage(message: IEventMessage): Promise<boolean> {
     case eventType.bookmarkRestored:
       res = await createBookmarkObject(data);
       break;
+    case eventType.bookmarkNotificationCreated:
+      res = await createBookmarkNotification(data);
+      break;
+    case eventType.bookmarkNotificationDeleted:
+      res = await deleteBookmarkNotification(data);
+      break;
     case eventType.bookmarkArchived:
     case eventType.bookmarkDeleted:
       res = await deleteBookmarkObject(data);
@@ -89,4 +95,7 @@ export enum eventType {
 
   collectionCreated = "COLLECTION_CREATED",
   collectionDeleted = "COLLECTION_DELETED",
+
+  bookmarkNotificationCreated = "BOOKMARK_NOTIFICATION_CREATED",
+  bookmarkNotificationDeleted = "BOOKMARK_NOTIFICATION_DELETED",
 }

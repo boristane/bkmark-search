@@ -11,41 +11,39 @@ async function search(event: APIGatewayEvent): Promise<IHTTPResponse> {
   try {
     const userData = event.requestContext.authorizer!;
     const { query, organisationId } = event.queryStringParameters!;
-    if (!query) {
+    if (!query || !organisationId) {
       return failure({ message: "Bad Request" }, 400);
     }
 
     const user = await database.getOwner(userData.uuid, false) as IUser;
 
-    if (organisationId && !user.organisations?.some((org) => org === organisationId)) {
+    if (!user.organisations?.some((org) => org === organisationId)) {
       return failure({ message: "Forbidden" }, 403);
     }
 
     let fullTextSearch = true;
 
-    if(organisationId) {
-      const organisation = await database.getOwner(organisationId, true);
-      fullTextSearch = organisation.membership.tier !== 0;
-      if (!organisation.membership.isActive) {
-        return failure({ message: "Please activate your subscription" }, 402);
-      }
+    const organisation = await database.getOwner(organisationId, true);
+    fullTextSearch = organisation.membership.tier !== 0;
+    if (!organisation.membership.isActive) {
+      return failure({ message: "Please activate your subscription" }, 402);
     }
 
     const { uuid } = userData;
 
     let hits: IBookmark[];
-    if (!organisationId) {
-      const promises = user.organisations!.map(async organisation => {
-        return await algolia.search(organisation, query, fullTextSearch);
-      }).flat();
-      hits = (await Promise.all(promises)).flat();
-    } else {
-      hits = (await algolia.search(organisationId, query, fullTextSearch)).filter((hit) =>
-        user.collections?.some(
-          (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
-        )
+
+    const userNotifications = await database.getUserNotifications(organisationId, userData.uuid);
+    hits = (await algolia.search(organisationId, query, fullTextSearch)).filter((hit) => {
+      const userHasAccessToCollection = user.collections?.some(
+        (collection) => collection.ownerId === hit.organisationId && collection.uuid === hit.collection.uuid
       );
+
+      const hitIsInUserNotifications = userNotifications.some(notif => notif.collectionId === hit.collection.uuid && notif.bookmarkId === hit.uuid);
+      return userHasAccessToCollection || hitIsInUserNotifications;
     }
+    );
+
 
     const data = {
       message: "Got search results",

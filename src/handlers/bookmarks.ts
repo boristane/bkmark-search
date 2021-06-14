@@ -3,6 +3,7 @@ import logger from "logger";
 import algolia from "../services/algolia";
 import database from "../services/database2";
 import { getFullPage } from "../services/scrapper";
+import { IBookmarkNotificationCreateRequest, IBookmarkNotificationRequest } from "../schemas/notification";
 
 export async function createBookmarkObject(data: { bookmark: IBookmarkRequest }): Promise<boolean> {
   try {
@@ -16,6 +17,27 @@ export async function createBookmarkObject(data: { bookmark: IBookmarkRequest })
     await database.createBookmark(objectId, bookmark);
   } catch (error) {
     logger.error("There was an error creating a bookmark for search", { data, error });
+    return false;
+  }
+  return true;
+}
+
+export async function createBookmarkNotification(data: IBookmarkNotificationCreateRequest): Promise<boolean> {
+  try {
+    const { notification } = data;
+    await database.createBookmarkNotification(notification);
+  } catch (error) {
+    logger.error("There was an error creating a bookmark notification", { data, error });
+    return false;
+  }
+  return true;
+}
+
+export async function deleteBookmarkNotification(data: IBookmarkNotificationRequest): Promise<boolean> {
+  try {
+    await database.deleteBookmarkNotification(data.organisationId, data.userId, data.uuid);
+  } catch (error) {
+    logger.error("There was an error creating a bookmark notification", { data, error });
     return false;
   }
   return true;

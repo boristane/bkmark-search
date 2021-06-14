@@ -41,6 +41,8 @@ Resources:
           - "USER_INTERNAL_COLLECTION_LEFT"
           - "COLLECTION_CREATED"
           - "COLLECTION_DELETED"
+          - "BOOKMARK_NOTIFICATION_CREATED"
+          - "BOOKMARK_NOTIFICATION_DELETED"
       State: "ENABLED"
       Targets: 
         - 

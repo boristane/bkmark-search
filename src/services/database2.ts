@@ -6,6 +6,7 @@ import Exception from "../utils/error";
 import { IUser } from "../models/user";
 import { IOrganisation } from "../models/organisation";
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
+import { IBookmarkNotificationRequest } from "../schemas/notification";
 
 function initialise(): { tableName: string; dynamoDb: DocumentClient } {
   const tableName = process.env.PROJECTION_TABLE_2!;
@@ -454,6 +455,89 @@ async function getAllByType(type: string): Promise<Record<string, any>[]> {
   return items;
 }
 
+async function createBookmarkNotification(notification: IBookmarkNotificationRequest): Promise<void> {
+  const { tableName, dynamoDb } = initialise();
+  const timestamp = moment().format();
+
+  const dbBookmark: IDatabaseItem = {
+    partitionKey: `organisation#${notification.organisationId}#user#${notification.userId}`,
+    sortKey: `notification#${notification.uuid}`,
+    data: notification,
+    created: timestamp,
+    updated: timestamp,
+    type: "bookmark-notification",
+  };
+  const params = {
+    TableName: tableName,
+    Item: dbBookmark,
+    ConditionExpression: "attribute_not_exists(partitionKey)",
+  };
+
+  try {
+    await dynamoDb.put(params).promise();
+  } catch (e) {
+    const message = "Failed to save a bookmark notification in dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
+async function deleteBookmarkNotification(organisationId: string, userId: string, uuid: number) {
+  const { tableName, dynamoDb } = initialise();
+
+  const params = {
+    TableName: tableName,
+    Key: {
+      partitionKey: `organisation#${organisationId}#user#${userId}`,
+      sortKey: `notification#${uuid}`,
+    },
+  };
+
+  try {
+    await dynamoDb.delete(params).promise();
+  } catch (e) {
+    const message = "Failed to delete nmotification from dynamo db";
+    logger.error(message, { params, error: e });
+    throw e;
+  }
+}
+
+export async function getUserNotifications(organisationId: string, userId: string): Promise<IBookmarkNotificationRequest[]> {
+  const { tableName, dynamoDb } = initialise();
+  let lastEvaluatedKey: DocumentClient.Key | undefined = undefined;
+  let notifications: IBookmarkNotificationRequest[] = [];
+  do {
+    const params: DocumentClient.QueryInput = {
+      TableName: tableName,
+      KeyConditionExpression: "#pk = :pkey",
+      ProjectionExpression: "#d",
+      ExpressionAttributeValues: {
+        ":pkey": `organisation#${organisationId}#user#${userId}`,
+      },
+      ExpressionAttributeNames: {
+        "#d": "data",
+        "#pk": "partitionKey",
+      },
+      ExclusiveStartKey: lastEvaluatedKey,
+    };
+    try {
+      const records = await dynamoDb.query(params).promise();
+      if (records.Items) {
+        const result = records.Items.map((item) => item.data) as IBookmarkNotificationRequest[];
+        notifications = [...notifications, ...result];
+        lastEvaluatedKey = records.LastEvaluatedKey;
+      } else {
+        throw Exception("Notifications not found", 404);
+      }
+    } catch (e) {
+      logger.error("Error getting the user notifications", { params, error: e });
+      throw e;
+    }
+  } while (lastEvaluatedKey !== undefined);
+
+  return notifications;
+}
+
 interface IDatabaseItem {
   partitionKey: string;
   sortKey: string;
@@ -478,4 +562,7 @@ export default {
   getAllObjectIDs,
   getAllByType,
   removeOrganisationFromUser,
+  createBookmarkNotification,
+  deleteBookmarkNotification,
+  getUserNotifications,
 };
