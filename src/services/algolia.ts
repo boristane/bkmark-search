@@ -145,6 +145,32 @@ async function search(ownerId: string, query: string, isFullText: boolean): Prom
   }
 }
 
+async function getAll(ownerId: string): Promise<IBookmark[]> {
+  const client = initialiseAlgolia();
+  try {
+    const indexName = `organisation#${ownerId}`;
+
+    const index = client.initIndex(indexName);
+    let hits = [] as any[];
+    await index.browseObjects({
+      query: '',
+      attributesToRetrieve: [
+        "objectID",
+        "organisationId",
+        "collection.uuid",
+        "uuid",
+      ],
+      batch: batch => {
+        hits = hits.concat(batch);
+      }
+    });
+    return hits as IBookmark[];
+  } catch (error) {
+    logger.error("There was an error running a get all request on Algolia", { error, ownerId });
+    throw Exception("Unkown Error", 500);
+  }
+}
+
 export default {
   createIndex,
   deleteIndex,
@@ -155,4 +181,5 @@ export default {
   removeFullPageFromBookmarks,
   getBookmark,
   setFullPageToBookmark,
+  getAll,
 };
