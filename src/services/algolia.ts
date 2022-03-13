@@ -171,6 +171,16 @@ async function getAll(ownerId: string): Promise<IBookmark[]> {
   }
 }
 
+async function getAllIndices() {
+  const client = initialiseAlgolia();
+  try {
+    const indices = await client.listIndices();
+    return indices.items;
+  } catch (error) {
+    logger.error("There was an error getting all the indices from Algolia", { error });
+  }
+}
+
 export default {
   createIndex,
   deleteIndex,
@@ -182,4 +192,5 @@ export default {
   getBookmark,
   setFullPageToBookmark,
   getAll,
+  getAllIndices,
 };
